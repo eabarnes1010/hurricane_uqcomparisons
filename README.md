@@ -2,7 +2,7 @@
 ***
 * author: Elizabeth A. Barnes and Randal J. Barnes
 * version: v1.0
-* date: 12 November 2021
+* date: 16 November 2021
 
 Neural networks are used to estimate consensus hurricane track and intensity errors, as well as the associated uncertainties of the network predictions.
 
