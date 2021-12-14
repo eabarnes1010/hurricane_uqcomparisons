@@ -26,7 +26,7 @@ class Exponentiate(keras.layers.Layer):
 
 
 def build_shash_model(
-    x_train, onehot_train, hiddens, output_shape, ridge_penalty=0.0, act_fun="relu"
+    x_train, onehot_train, hiddens, output_shape, ridge_penalty=0.0, act_fun="relu", rng_seed=999,
 ):
     """Build the fully-connected shash network architecture with
     internal scaling.
@@ -108,8 +108,8 @@ def build_shash_model(
             activation="linear",
             use_bias=True,
             kernel_regularizer=regularizers.l1_l2(l1=0.00, l2=ridge_penalty),
-            bias_initializer=tf.keras.initializers.RandomNormal(),
-            kernel_initializer=tf.keras.initializers.RandomNormal(),
+            bias_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed),
+            kernel_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed),
         )(x)
     else:
         # Initialize the first hidden layer.
@@ -118,8 +118,8 @@ def build_shash_model(
             activation=act_fun,
             use_bias=True,
             kernel_regularizer=regularizers.l1_l2(l1=0.00, l2=ridge_penalty),
-            bias_initializer=tf.keras.initializers.RandomNormal(),
-            kernel_initializer=tf.keras.initializers.RandomNormal(),
+            bias_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed),
+            kernel_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed),
         )(x)
 
         # Initialize the subsequent hidden layers.
@@ -129,8 +129,8 @@ def build_shash_model(
                 activation=act_fun,
                 use_bias=True,
                 kernel_regularizer=regularizers.l1_l2(l1=0.00, l2=0.0),
-                bias_initializer=tf.keras.initializers.RandomNormal(),
-                kernel_initializer=tf.keras.initializers.RandomNormal(),
+                bias_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed),
+                kernel_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed),
             )(x)
 
     # Compute the mean and standard deviation of the y_train data to rescale
@@ -144,8 +144,8 @@ def build_shash_model(
         units=1,
         activation="linear",
         use_bias=True,
-        bias_initializer=tf.keras.initializers.RandomNormal(),
-        kernel_initializer=tf.keras.initializers.RandomNormal(),
+        bias_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed),
+        kernel_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed),
         name="mu_z_unit",
     )(x)
 

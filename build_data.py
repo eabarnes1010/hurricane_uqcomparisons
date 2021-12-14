@@ -136,7 +136,8 @@ def build_hurricane_data(data_path, settings, verbose=0):
         df = df.drop(df.index[df[y_name[0]] == missing])
 
     # Shuffle the rows in the df Dataframe, using the numpy rng.
-    df = df.sample(frac=1)
+    # rng = np.random.default_rng(settings['rng_seed'])
+    df = df.sample(frac=1,random_state=settings['rng_seed'])
 
     # Extract the x columns and the y column.
     x_data = df[x_names].to_numpy()
