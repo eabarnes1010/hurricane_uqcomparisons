@@ -166,11 +166,13 @@ def build_hurricane_data(data_path, settings, verbose=0):
     # remaining columns are zero -- i.e. dummy columns.  These dummy columns
     # are required by tensorflow; the number of columns must equal the number
     # of distribution parameters.
-    if settings["distribution"] == "shash2":
+    if settings["uncertainty_type"] == "bnn":
+        n_parameters = 1
+    elif settings["uncertainty_type"] == "shash2":
         n_parameters = 2
-    elif settings["distribution"] == "shash3":
+    elif settings["uncertainty_type"] == "shash3":
         n_parameters = 3
-    elif settings["distribution"] == "shash4":
+    elif settings["uncertainty_type"] == "shash4":
         n_parameters = 4
     else:
         raise NotImplementedError

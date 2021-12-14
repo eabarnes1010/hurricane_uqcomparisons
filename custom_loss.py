@@ -3,17 +3,20 @@
 
 Functions
 ---------
-compute_likelihood_loss(y_true, pred)
+compute_NLL(y,distr)
+compute_shash_NLL(y_true, pred)
 
 """
 import tensorflow as tf
 import shash
 
 __author__ = "Randal J Barnes and Elizabeth A. Barnes"
-__version__ = "30 October 2021"
+__version__ = "14 December 2021"
 
+def compute_NLL(y, distr): 
+    return -distr.log_prob(y) 
 
-def compute_likelihood_loss(y_true, pred):
+def compute_shash_NLL(y_true, pred):
     """Negative log-likelihood loss using the sinh-arcsinh normal distribution.
 
     Arguments

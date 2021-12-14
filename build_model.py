@@ -2,7 +2,8 @@
 
 Functions
 ---------
-build_shash_model(hiddens, input_shape, output_shape, ridge_penalty, act_fun)
+build_shash_model(hiddens, input_shape, output_shape, ridge_penalty, act_fun, rng_seed)
+build_bnn_model(hiddens, input_shape, output_shape, ridge_penalty, act_fun, rng_seed)
 
 """
 import numpy as np
@@ -10,10 +11,11 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import regularizers
 from tensorflow import keras
+import tensorflow_probability as tfp
+from distributions import normal_softplus
 
 __author__ = "Elizabeth A. Barnes and Randal J. Barnes"
-__version__ = "30 October 2021"
-
+__version__ = "14 December 2021"
 
 class Exponentiate(keras.layers.Layer):
     """Custom layer to exp the sigma and tau estimates inline."""
@@ -221,4 +223,100 @@ def build_shash_model(
                 raise NotImplementedError
 
     model = tf.keras.models.Model(inputs=inputs, outputs=output_layer)
+    return model
+
+def build_bnn_model(
+    x_train, onehot_train, hiddens, output_shape, ridge_penalty=0.0, act_fun="relu", rng_seed=999,
+):
+    """Build the fully-connected BNN architecture with
+    internal scaling.
+
+    Arguments
+    ---------
+    x_train : numpy.ndarray
+        The training split of the x data.
+        shape = [n_train, n_features].
+
+    onehot_train : numpy.ndarray
+        The training split of the scaled y data is in the first column.
+        shape = [n_train,].
+
+    hiddens : list (integers)
+        Numeric list containing the number of neurons for each layer.
+
+    output_shape : integer 
+        The prediction.
+
+    ridge_penalty : float, default=0.0
+        The L2 regularization penalty for the first layer.
+        ***NOT USED FOR THE BNN***
+
+    act_fun : function, default="relu"
+        The activation function to use on the deep hidden layers.
+    
+    rng_seed : integer, default=999
+        Random seed for layer initialization
+    
+
+    Returns
+    -------
+    model : tensorflow.keras.models.Model
+
+    Notes
+    -----
+
+    """
+    # The avg and std for feature normalization are computed from x_train.
+    # Using the .adapt method, these are set once and do not change, but
+    # the constants travel with the model.
+    inputs = tf.keras.Input(shape=x_train.shape[1:])
+
+    normalizer = tf.keras.layers.Normalization()
+    normalizer.adapt(x_train)
+    x = normalizer(inputs)
+
+    # define kl divergence functions for BNN
+    # the two lines below rescale the kl divergence ("kind of a bug fix for TFP" - Duerr 2020)
+    kernel_divergence_fn=lambda q, p, _: tfp.distributions.kl_divergence(q, p) / (x_train.shape[0] * 1.0)
+    bias_divergence_fn=lambda q, p, _: tfp.distributions.kl_divergence(q, p) / (x_train.shape[0] * 1.0)
+    
+    # Initialize the first hidden layer.
+    x = tfp.layers.DenseFlipout(
+        units=hiddens[0],
+        activation=act_fun,
+        bias_posterior_fn=tfp.layers.util.default_mean_field_normal_fn(),
+        bias_prior_fn=tfp.layers.default_multivariate_normal_fn,
+        kernel_divergence_fn=kernel_divergence_fn,
+        bias_divergence_fn=bias_divergence_fn,
+        seed=rng_seed,        
+    )(x)
+
+    # Initialize the subsequent hidden layers.
+    for layer_size in hiddens[1:]:
+        x = tfp.layers.DenseFlipout(
+            units=layer_size,
+            activation=act_fun,
+            bias_posterior_fn=tfp.layers.util.default_mean_field_normal_fn(),
+            bias_prior_fn=tfp.layers.default_multivariate_normal_fn,
+            kernel_divergence_fn=kernel_divergence_fn,
+            bias_divergence_fn=bias_divergence_fn,
+            seed=rng_seed,
+        )(x)
+
+    # final layer (sigma, mu)
+    
+    params = tfp.layers.DenseFlipout(
+             units=2,
+             bias_posterior_fn=tfp.layers.util.default_mean_field_normal_fn(),
+             bias_prior_fn=tfp.layers.default_multivariate_normal_fn,
+             kernel_divergence_fn=kernel_divergence_fn,
+             bias_divergence_fn=bias_divergence_fn,
+             seed=rng_seed,
+    )(x)
+    
+    dist = tfp.layers.DistributionLambda(normal_softplus)(params)
+    model = tf.keras.models.Model(inputs=inputs, outputs=dist)    
+    
+    model_params = tf.keras.models.Model(inputs=inputs, outputs=params)
+    
     return model

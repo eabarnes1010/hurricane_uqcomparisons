@@ -75,73 +75,82 @@ def plot_history(history, model_name):
     plt.legend(frameon=True, fontsize=FONTSIZE)
 
     # Plot the training and validations customMAE history.
-    plt.subplot(2, 2, 2)
-    plt.plot(
-        history.history["custom_mae"],
-        "o",
-        color=TRAIN_COLOR,
-        markersize=3,
-        label="train",
-    )
-    plt.plot(
-        history.history["val_custom_mae"],
-        "o",
-        color=VALID_COLOR,
-        markersize=3,
-        label="valid",
-    )
+    try:
+        plt.subplot(2, 2, 2)
+        plt.plot(
+            history.history["custom_mae"],
+            "o",
+            color=TRAIN_COLOR,
+            markersize=3,
+            label="train",
+        )
+        plt.plot(
+            history.history["val_custom_mae"],
+            "o",
+            color=VALID_COLOR,
+            markersize=3,
+            label="valid",
+        )
 
-    plt.axvline(x=best_epoch, linestyle="--", color="tab:gray")
-    plt.title("Mean |true - median|")
-    plt.xlabel("Epoch")
-    plt.grid(True)
-    plt.legend(frameon=True, fontsize=FONTSIZE)
-
+        plt.axvline(x=best_epoch, linestyle="--", color="tab:gray")
+        plt.title("Mean |true - median|")
+        plt.xlabel("Epoch")
+        plt.grid(True)
+        plt.legend(frameon=True, fontsize=FONTSIZE)
+    except:
+        print('no mae metric, skipping plot')
+        
     # Plot the training and validations InterquartileCapture history.
-    plt.subplot(2, 2, 3)
-    plt.plot(
-        history.history["interquartile_capture"],
-        "o",
-        color=TRAIN_COLOR,
-        markersize=3,
-        label="train",
-    )
-    plt.plot(
-        history.history["val_interquartile_capture"],
-        "o",
-        color=VALID_COLOR,
-        markersize=3,
-        label="valid",
-    )
+    try:
+        plt.subplot(2, 2, 3)
+        plt.plot(
+            history.history["interquartile_capture"],
+            "o",
+            color=TRAIN_COLOR,
+            markersize=3,
+            label="train",
+        )
+        plt.plot(
+            history.history["val_interquartile_capture"],
+            "o",
+            color=VALID_COLOR,
+            markersize=3,
+            label="valid",
+        )
 
-    plt.axvline(x=best_epoch, linestyle="--", color="tab:gray")
-    plt.title("Fraction Between 25 and 75 Percentile")
-    plt.xlabel("Epoch")
-    plt.grid(True)
-    plt.legend(frameon=True, fontsize=FONTSIZE)
+        plt.axvline(x=best_epoch, linestyle="--", color="tab:gray")
+        plt.title("Fraction Between 25 and 75 Percentile")
+        plt.xlabel("Epoch")
+        plt.grid(True)
+        plt.legend(frameon=True, fontsize=FONTSIZE)
+    except:
+        print('no interquartile_capture, skipping plot')
 
     # Plot the training and validations SignTest history.
-    plt.subplot(2, 2, 4)
-    plt.plot(
-        history.history["sign_test"],
-        "o",
-        color=TRAIN_COLOR,
-        markersize=3,
-        label="train",
-    )
-    plt.plot(
-        history.history["val_sign_test"],
-        "o",
-        color=VALID_COLOR,
-        markersize=3,
-        label="valid",
-    )
+    try:
+        plt.subplot(2, 2, 4)
+        plt.plot(
+            history.history["sign_test"],
+            "o",
+            color=TRAIN_COLOR,
+            markersize=3,
+            label="train",
+        )
+        plt.plot(
+            history.history["val_sign_test"],
+            "o",
+            color=VALID_COLOR,
+            markersize=3,
+            label="valid",
+        )
 
-    plt.axvline(x=best_epoch, linestyle="--", color="tab:gray")
-    plt.title("Fraction Above the Median")
-    plt.xlabel("Epoch")
-    plt.grid(True)
-    plt.legend(frameon=True, fontsize=FONTSIZE)
+        plt.axvline(x=best_epoch, linestyle="--", color="tab:gray")
+        plt.title("Fraction Above the Median")
+        plt.xlabel("Epoch")
+        plt.grid(True)
+        plt.legend(frameon=True, fontsize=FONTSIZE)
+    except:
+        print('no sign-test, skipping plot')
 
     # Draw and save the plot.
     plt.tight_layout()

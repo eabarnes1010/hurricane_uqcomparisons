@@ -14,7 +14,7 @@ import tensorflow as tf
 import toolbox
 
 __author__ = "Elizabeth A. Barnes and Randal J. Barnes"
-__date__ = "30 October 2021"
+__date__ = "14 December 2021"
 
 
 def save_model_run(
@@ -60,10 +60,13 @@ def save_model_run(
 
     """
     # Save the model, weights, and history.
-    tf.keras.models.save_model(
-        model, model_path + model_name + "_model", overwrite=True
-    )
-
+    try:
+        tf.keras.models.save_model(
+            model, model_path + model_name + "_model", overwrite=True
+        )
+    except:
+        print('unable to save the model, skipping and saving the weights.')
+        
     model.save_weights(model_path + model_name + "_weights.h5")
 
     with open(model_path + model_name + "_history.pickle", "wb") as handle:
