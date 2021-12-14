@@ -376,7 +376,7 @@ def rvs(mu, sigma, gamma, tau, size=1):
     scalar arguments, not tensors.
 
     """
-    z = scipy.stats.norm.rvs(size=size)
+    z = scipy.stats.norm.rvs(size=size, random_state=np.random.RandomState(seed=888))
     return mu + sigma * np.sinh((np.arcsinh(z) + gamma) / tau)
 
 

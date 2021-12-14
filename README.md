@@ -24,6 +24,7 @@ pip install --upgrade palettable progressbar2 tabulate icecream flake8
 pip install --upgrade keras-tuner sklearn
 pip install --upgrade jupyterlab black isort jupyterlab_code_formatter
 pip install silence-tensorflow
+pip install tqdm
 ```
 
 ### Credits

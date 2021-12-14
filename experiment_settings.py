@@ -9,7 +9,7 @@ def get_settings(experiment_name):
 
         "intensity0_AL72": {
             "filename": "nnfit_vlist_intensity_and_track_extended.dat",
-            "uncertainty_type": 'bnn', #'shash3'
+            "uncertainty_type": 'shash3', #'shash3'
             "leadtime": 72,
             "basin": "AL",
             "target": "intensity",
@@ -29,9 +29,9 @@ def get_settings(experiment_name):
             "n_test": 0,
         }, 
         
-        "intensity0_AL72": {
+        "intensity1_AL72": {
             "filename": "nnfit_vlist_intensity_and_track_extended.dat",
-            "uncertainty_type": 'shash3', #'shash3'
+            "uncertainty_type": 'bnn', #'shash3'
             "leadtime": 72,
             "basin": "AL",
             "target": "intensity",
