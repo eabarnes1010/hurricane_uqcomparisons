@@ -303,8 +303,7 @@ def build_bnn_model(
             seed=rng_seed,
         )(x)
 
-    # final layer (sigma, mu)
-    
+    # penultimate layer (sigma, mu)
     params = tfp.layers.DenseFlipout(
              units=2,
              bias_posterior_fn=tfp.layers.util.default_mean_field_normal_fn(),
@@ -317,6 +316,6 @@ def build_bnn_model(
     dist = tfp.layers.DistributionLambda(normal_softplus)(params)
     model = tf.keras.models.Model(inputs=inputs, outputs=dist)    
     
-    model_params = tf.keras.models.Model(inputs=inputs, outputs=params)
+    model_params = tf.keras.models.Model(inputs=inputs, outputs=params) # to be used later
     
     return model
