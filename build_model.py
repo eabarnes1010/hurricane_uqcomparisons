@@ -316,6 +316,6 @@ def build_bnn_model(
     dist = tfp.layers.DistributionLambda(normal_softplus)(params)
     model = tf.keras.models.Model(inputs=inputs, outputs=dist)    
     
-    model_params = tf.keras.models.Model(inputs=inputs, outputs=params) # to be used later
+    # model_params = tf.keras.models.Model(inputs=inputs, outputs=params) # to be used later to study the params if you want to
     
     return model
