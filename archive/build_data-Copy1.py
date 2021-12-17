@@ -10,7 +10,6 @@ import pprint
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import copy
 
 import toolbox
 
@@ -158,69 +157,24 @@ def build_hurricane_data(data_path, settings, verbose=0):
     
     x_train = x_data[:n_train]
     y_train = y_data[:n_train]
-        
-    if n_val == 0:
-        x_val  = x_train
-        y_val  = y_train
-        df_val = df
-    else:
-        x_val  = x_data[n_train:n_train+n_val]
-        y_val  = y_data[n_train:+n_train+n_val]
-        df_val = df.iloc[n_train:+n_train+n_val]
 
-    # Create 'onehot' y arrays. The y values go in the first column, and the
-    # remaining columns are zero -- i.e. dummy columns.  These dummy columns
-    # are required by tensorflow; the number of columns must equal the number
-    # of distribution parameters.
-    if settings["uncertainty_type"] == "bnn":
-        n_parameters = 1
-    elif settings["uncertainty_type"] == "shash2":
-        n_parameters = 2
-    elif settings["uncertainty_type"] == "shash3":
-        n_parameters = 3
-    elif settings["uncertainty_type"] == "shash4":
-        n_parameters = 4
-    else:
-        raise NotImplementedError
-
-    onehot_train = np.zeros((len(y_train), n_parameters))
-    onehot_val = np.zeros((len(y_val), n_parameters))
-
-    onehot_train[:, 0] = y_train
-    onehot_val[:, 0] = y_val
-    
-    x_eval       = copy.deepcopy(x_val)
-    onehot_eval  = copy.deepcopy(onehot_val)  
-    df_eval      = df_val.copy()    
-    
-    #======================================================================
-    # out of sample analysis
-    
     # grab subset of training for evaluating out-of-sample predictions
     cluster_out = np.nan    
-    cluster_eval = np.nan
+    cluster_val = np.nan
     try:
         print("train_condition = " + settings["train_condition"])
         
         if(settings["train_condition"]=='DV12<=15'):
-            i_var        = x_names.index('DV12')
-            i_index      = np.where(x_train[:,i_var]<=15)[0]
-            x_train      = x_train[i_index,:]
-            onehot_train = onehot_train[i_index,:]
-            
-            i_index      = np.where(x_val[:,i_var]<=15)[0]
-            x_val        = x_val[i_index,:]
-            onehot_val   = onehot_val[i_index,:]
+            i_var = x_names.index('DV12')
+            i_index = np.where(x_train[:,i_var]<=15)[0]
+            x_train = x_train[i_index,:]
+            y_train = y_train[i_index]
             
         elif(settings["train_condition"]=='VMXC<=90'):
-            i_var        = x_names.index('VMXC')
-            i_index      = np.where(x_train[:,i_var]<=90)[0]
-            x_train      = x_train[i_index,:]
-            onehot_train = onehot_train[i_index,:] 
-            
-            i_index      = np.where(x_val[:,i_var]<=90)[0]
-            x_val        = x_val[i_index,:]
-            onehot_val   = onehot_val[i_index,:]            
+            i_var = x_names.index('VMXC')
+            i_index = np.where(x_train[:,i_var]<=90)[0]
+            x_train = x_train[i_index,:]
+            y_train = y_train[i_index] 
             
         elif(settings["train_condition"]=='cluster'):
             from scipy.cluster.vq import kmeans,vq
@@ -244,38 +198,61 @@ def build_hurricane_data(data_path, settings, verbose=0):
             
             class_freq = np.bincount(cluster_label)
             cluster_out = np.argmin(class_freq)
-            cluster_eval, _ = vq((x_eval-data_mean)/data_std,clusters) 
             
-            i_index      = np.where(cluster_label!=cluster_out)[0]
-            x_train      = x_train[i_index,:]
-            onehot_train = onehot_train[i_index,:]
-            
-            i_index      = np.where(cluster_eval!=cluster_out)[0]
-            x_val        = x_val[i_index,:]
-            onehot_val   = onehot_val[i_index,:]            
+            i_index = np.where(cluster_label!=cluster_out)[0]
+            x_train = x_train[i_index,:]
+            y_train = y_train[i_index] 
             
         else:
             raise ValueError("no such train_condition")
 
     except:
         print('settings["train_condition"] is undefined')
+
+        
+    if n_val == 0:
+        x_val  = x_train
+        y_val  = y_train
+        df_val = df
+    else:
+        x_val  = x_data[n_train:n_train+n_val]
+        y_val  = y_data[n_train:+n_train+n_val]
+        df_val = df.iloc[n_train:+n_train+n_val]
+
+    if(np.isnan(cluster_out) == False):
+        cluster_val, _ = vq((x_val-data_mean)/data_std,clusters) 
     
-    
-    #======================================================================    
-    
+    # Create 'onehot' y arrays. The y values go in the first column, and the
+    # remaining columns are zero -- i.e. dummy columns.  These dummy columns
+    # are required by tensorflow; the number of columns must equal the number
+    # of distribution parameters.
+    if settings["uncertainty_type"] == "bnn":
+        n_parameters = 1
+    elif settings["uncertainty_type"] == "shash2":
+        n_parameters = 2
+    elif settings["uncertainty_type"] == "shash3":
+        n_parameters = 3
+    elif settings["uncertainty_type"] == "shash4":
+        n_parameters = 4
+    else:
+        raise NotImplementedError
+
+    onehot_train = np.zeros((len(y_train), n_parameters))
+    onehot_val = np.zeros((len(y_val), n_parameters))
+
+    onehot_train[:, 0] = y_train
+    onehot_val[:, 0] = y_val
 
     # Make a descriptive dictionary.
     data_summary = {
         "datafile_path": datafile_path,
         "x_train_shape": tuple(x_train.shape),
         "x_val_shape": tuple(x_val.shape),
-        "x_eval_shape": tuple(x_eval.shape),        
         "onehot_train_shape": tuple(onehot_train.shape),
         "onehot_val_shape": tuple(onehot_val.shape),
-        "onehot_eval_shape": tuple(onehot_eval.shape),        
         "x_names": x_names,
         "y_name": y_name,
-        "cluster_eval": cluster_eval,
+        "cluster_val": cluster_val,
         "cluster_out": cluster_out,
     }
 
@@ -284,19 +261,13 @@ def build_hurricane_data(data_path, settings, verbose=0):
         pprint.pprint(data_summary, width=80)
 
     if verbose >= 2:
-        toolbox.print_summary_statistics({"y_train" : onehot_train[:,0], 
-                                          "y_val"   : onehot_val[:,0], 
-                                          "y_eval"  : onehot_eval[:,0]}, 
-                                         sigfigs=1)
+        toolbox.print_summary_statistics({"y_train": y_train, "y_val": y_val}, sigfigs=1)
 
     return (
         x_train,
         onehot_train,
         x_val,
         onehot_val,
-        x_eval,
-        onehot_eval,        
         data_summary,
         df_val,
-        df_eval,
     )
