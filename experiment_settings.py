@@ -5,8 +5,8 @@ __date__ = "30 October 2021"
 
 
 def get_settings(experiment_name):
-    experiments = {
-
+    experiments = {     
+        
         "intensity0_AL72": {
             "filename": "nnfit_vlist_intensity_and_track_extended.dat",
             "uncertainty_type": 'shash3', 
@@ -25,7 +25,7 @@ def get_settings(experiment_name):
             "patience": 300,
             "ridge_param": 0.0,
             "n_val": 300,
-            "n_test": 0,
+            "n_train": "max",
         }, 
         
         "intensity1_AL72": {
@@ -46,7 +46,7 @@ def get_settings(experiment_name):
             "patience": 300,
             "ridge_param": 0.0,
             "n_val": 300,
-            "n_test": 0,
+            "n_train": "max",
         },      
         
         "intensity2_EPCP48": {
@@ -67,7 +67,7 @@ def get_settings(experiment_name):
             "patience": 100,
             "ridge_param": 0.0,
             "n_val": 512,
-            "n_test": 0,
+            "n_train": "max",
         },  
         "intensity3_EPCP48": {
             "filename": "nnfit_vlist_intensity_and_track_extended.dat",
@@ -87,7 +87,7 @@ def get_settings(experiment_name):
             "patience": 100,
             "ridge_param": 0.0,
             "n_val": 512,
-            "n_test": 0,
+            "n_train": "max",
         },   
         
         "intensity4_EPCP72": {
@@ -108,7 +108,7 @@ def get_settings(experiment_name):
             "patience": 100,
             "ridge_param": 0.0,
             "n_val": 512,
-            "n_test": 0,
+            "n_train": "max",
         },        
         "intensity5_EPCP72": {
             "filename": "nnfit_vlist_intensity_and_track_extended.dat",
@@ -128,92 +128,10 @@ def get_settings(experiment_name):
             "patience": 100,
             "ridge_param": 0.0,
             "n_val": 512,
-            "n_test": 0,
+            "n_train": "max",
         }, 
         
-        
-        "intensity100_EPCP48": {
-            "filename": "nnfit_vlist_intensity_and_track_extended.dat",
-            "uncertainty_type": 'shash3',            
-            "leadtime": 48,
-            "basin": "EP|CP",
-            "target": "intensity",
-            "undersample": False,
-            "hiddens": [15, 10],
-            "learning_rate": 0.0001,
-            "momentum": 0.9,
-            "nesterov": True,
-            "batch_size": 64,
-            "rng_seed": 999,
-            "act_fun": "relu",
-            "n_epochs": 25_000,
-            "patience": 100,
-            "ridge_param": 0.0,
-            "n_val": 1500,
-            "n_test": 0,
-        },  
-        "intensity101_EPCP48": {
-            "filename": "nnfit_vlist_intensity_and_track_extended.dat",
-            "uncertainty_type": 'bnn',
-            "leadtime": 48,
-            "basin": "EP|CP",
-            "target": "intensity",
-            "undersample": False,
-            "hiddens": [15, 10],
-            "learning_rate": 0.0001,
-            "momentum": 0.9,
-            "nesterov": True,
-            "batch_size": 64,
-            "rng_seed": 999,
-            "act_fun": "relu",
-            "n_epochs": 25_000,
-            "patience": 100,
-            "ridge_param": 0.0,
-            "n_val": 1500,
-            "n_test": 0,
-        },  
-        "intensity102_EPCP48": {
-            "filename": "nnfit_vlist_intensity_and_track_extended.dat",
-            "uncertainty_type": 'shash3',            
-            "leadtime": 48,
-            "basin": "EP|CP",
-            "target": "intensity",
-            "undersample": False,
-            "hiddens": [15, 10],
-            "learning_rate": 0.0001,
-            "momentum": 0.9,
-            "nesterov": True,
-            "batch_size": 64,
-            "rng_seed": 999,
-            "act_fun": "relu",
-            "n_epochs": 25_000,
-            "patience": 100,
-            "ridge_param": 0.0,
-            "n_val": 1800,
-            "n_test": 0,
-        },  
-        "intensity103_EPCP48": {
-            "filename": "nnfit_vlist_intensity_and_track_extended.dat",
-            "uncertainty_type": 'bnn',
-            "leadtime": 48,
-            "basin": "EP|CP",
-            "target": "intensity",
-            "undersample": False,
-            "hiddens": [15, 10],
-            "learning_rate": 0.0001,
-            "momentum": 0.9,
-            "nesterov": True,
-            "batch_size": 64,
-            "rng_seed": 999,
-            "act_fun": "relu",
-            "n_epochs": 25_000,
-            "patience": 100,
-            "ridge_param": 0.0,
-            "n_val": 1800,
-            "n_test": 0,
-        },        
-        
-     
+             
                
     }
 

@@ -143,24 +143,29 @@ def build_hurricane_data(data_path, settings, verbose=0):
     x_data = df[x_names].to_numpy()
     y_data = np.squeeze(df[y_name].to_numpy())
 
-    # Get the sizes.
-    n_val = settings["n_val"]
-    n_train = np.shape(x_data)[0] - n_val
-
-    # Training/validation split.
+    # Get the training and validation splits.
+    n_val   = settings["n_val"]
+    n_train = settings["n_train"]
+    if(settings["n_train"] == "max"):
+        n_train = np.shape(x_data)[0] - n_val
+    else:
+        n_train = settings["n_train"]
+        
+    if(n_val + n_train > np.shape(x_data)[0]):
+        raise ValueError('n_val + n_train > np.shape(x_data)')
+    
     x_train = x_data[:n_train]
     y_train = y_data[:n_train]
 
     if n_val == 0:
-        x_val = x_train
-        y_val = y_train
+        x_val  = x_train
+        y_val  = y_train
+        df_val = df
     else:
-        x_val = x_data[n_train:]
-        y_val = y_data[n_train:]
+        x_val  = x_data[n_train:n_train+n_val]
+        y_val  = y_data[n_train:+n_train+n_val]
+        df_val = df.iloc[n_train:+n_train+n_val]
 
-    # split dataframe into training and validation
-    # df_train = df.iloc[:n_train]
-    df_val = df.iloc[n_train:]
     
     # Create 'onehot' y arrays. The y values go in the first column, and the
     # remaining columns are zero -- i.e. dummy columns.  These dummy columns
