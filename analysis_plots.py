@@ -36,14 +36,16 @@ def adjust_spines(ax, spines):
     else:
             ax.xaxis.set_ticks([])  
 
-def plot_sample(ax, onehot_val, shash_cpd, bnn_cpd, sample=130):
+def plot_sample(ax, onehot_val, shash_incs, shash_cpd, bnn_cpd, sample=130):
     plt.sca(ax)  
 
-    x_incs = np.arange(-100,110,1)
-    bins = np.arange(-100,110,2)
+    if(shash_cpd.shape[0]<sample):
+        sample = shash_cpd.shape[0]-1
+    
+    bins = np.arange(np.min(shash_incs),np.max(shash_incs)+2,2)
 
     # results for SHASH
-    plt.plot(x_incs,
+    plt.plot(shash_incs,
              shash_cpd[sample,:],
              color=clr_shash,
              linewidth=2,
@@ -170,7 +172,7 @@ def plot_medians(ax, onehot_val, shash_cpd, bnn_cpd, shash_med):
 
     plt.title('Median vs Median')    
     
-def plot_nlls(ax, x_val, onehot_val, model_shash, shash_cpd, bnn_cpd, shash_med):
+def plot_nlls(ax, x_val, onehot_val, model_shash, shash_cpd, bnn_cpd):
     plt.sca(ax)
     
     shash_nloglike = model_diagnostics.compute_nll('shash', onehot_val, model_shash=model_shash, x_val=x_val)

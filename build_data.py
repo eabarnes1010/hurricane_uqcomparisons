@@ -159,14 +159,25 @@ def build_hurricane_data(data_path, settings, verbose=0):
 
     # grab subset of training for evaluating out-of-sample predictions
     try:
+        print(settings["train_condition"])
+        
         if(settings["train_condition"]=='DV12<=15'):
             i_var = x_names.index('DV12')
             i_index = np.where(x_train[:,i_var]<=15)[0]
             x_train = x_train[i_index,:]
+            y_train = y_train[i_index]
+        elif(settings["train_condition"]=='VMXC<=90'):
+            i_var = x_names.index('VMXC')
+            i_index = np.where(x_train[:,i_var]<=90)[0]
+            x_train = x_train[i_index,:]
             y_train = y_train[i_index]  
+        else:
+            raise ValueError("no such train_condition")
+
     except:
         print('settings["train_condition"] is undefined')
-    
+
+        
     if n_val == 0:
         x_val  = x_train
         y_val  = y_train
