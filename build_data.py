@@ -9,6 +9,7 @@ import pprint
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 import toolbox
 
@@ -158,19 +159,50 @@ def build_hurricane_data(data_path, settings, verbose=0):
     y_train = y_data[:n_train]
 
     # grab subset of training for evaluating out-of-sample predictions
+    cluster_out = np.nan    
+    cluster_val = np.nan
     try:
-        print(settings["train_condition"])
+        print("train_condition = " + settings["train_condition"])
         
         if(settings["train_condition"]=='DV12<=15'):
             i_var = x_names.index('DV12')
             i_index = np.where(x_train[:,i_var]<=15)[0]
             x_train = x_train[i_index,:]
             y_train = y_train[i_index]
+            
         elif(settings["train_condition"]=='VMXC<=90'):
             i_var = x_names.index('VMXC')
             i_index = np.where(x_train[:,i_var]<=90)[0]
             x_train = x_train[i_index,:]
-            y_train = y_train[i_index]  
+            y_train = y_train[i_index] 
+            
+        elif(settings["train_condition"]=='cluster'):
+            from scipy.cluster.vq import kmeans,vq
+            numclust = 4
+            data = np.copy(x_train)
+            data_mean = np.mean(data,axis=0)
+            data_std  = np.std(data,axis=0)
+            data = (data - data_mean)/data_std
+            
+            clusters, dist = kmeans(data, numclust, iter=500, seed=settings["rng_seed"])
+            cluster_label, _ = vq(data,clusters)
+            
+            fig, axs = plt.subplots(1,2, figsize=(15,5))
+            plt.sca(axs[0])
+            plt.hist(cluster_label,np.arange(-.5,numclust+.5,1.), width=.98)
+            plt.sca(axs[1])
+            for ic in np.arange(0,numclust):
+                plt.plot(x_names,clusters[ic,:], label='cluster ' + str(ic),linewidth=2)
+            plt.legend()
+            plt.show() 
+            
+            class_freq = np.bincount(cluster_label)
+            cluster_out = np.argmin(class_freq)
+            
+            i_index = np.where(cluster_label!=cluster_out)[0]
+            x_train = x_train[i_index,:]
+            y_train = y_train[i_index] 
+            
         else:
             raise ValueError("no such train_condition")
 
@@ -187,6 +219,8 @@ def build_hurricane_data(data_path, settings, verbose=0):
         y_val  = y_data[n_train:+n_train+n_val]
         df_val = df.iloc[n_train:+n_train+n_val]
 
+    if(np.isnan(cluster_out) == False):
+        cluster_val, _ = vq((x_val-data_mean)/data_std,clusters) 
     
     # Create 'onehot' y arrays. The y values go in the first column, and the
     # remaining columns are zero -- i.e. dummy columns.  These dummy columns
@@ -218,6 +252,8 @@ def build_hurricane_data(data_path, settings, verbose=0):
         "onehot_val_shape": tuple(onehot_val.shape),
         "x_names": x_names,
         "y_name": y_name,
+        "cluster_val": cluster_val,
+        "cluster_out": cluster_out,
     }
 
     # Report the results.
