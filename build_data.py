@@ -14,7 +14,7 @@ import toolbox
 
 
 __author__ = "Elizabeth A. Barnes and Randal J Barnes"
-__version__ = "30 October 2021"
+__version__ = "17 December 2021"
 
 
 def build_hurricane_data(data_path, settings, verbose=0):
@@ -157,6 +157,16 @@ def build_hurricane_data(data_path, settings, verbose=0):
     x_train = x_data[:n_train]
     y_train = y_data[:n_train]
 
+    # grab subset of training for evaluating out-of-sample predictions
+    try:
+        if(settings["train_condition"]=='DV12<=15'):
+            i_var = x_names.index('DV12')
+            i_index = np.where(x_train[:,i_var]<=15)[0]
+            x_train = x_train[i_index,:]
+            y_train = y_train[i_index]  
+    except:
+        print('settings["train_condition"] is undefined')
+    
     if n_val == 0:
         x_val  = x_train
         y_val  = y_train

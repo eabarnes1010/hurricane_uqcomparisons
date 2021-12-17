@@ -1,10 +1,11 @@
-"""Plot the model.fit training history."""
+"""Plot the model.fit training history and other analysis metrics."""
 
 import numpy as np
 import matplotlib.pyplot as plt
+import shash
 
 __author__ = "Randal J Barnes and Elizabeth A. Barnes"
-__version__ = "30 October 2021"
+__version__ = "17 December 2021"
 
 
 def plot_history(history, model_name):
@@ -156,3 +157,73 @@ def plot_history(history, model_name):
     plt.tight_layout()
     plt.savefig("figures/model_diagnostics/" + model_name + ".png", dpi=DPIFIG)
     plt.show()
+    
+    
+    
+    
+    
+def compute_pit(uncertainty_type, onehot_val, bnn_cpd=None, x_val=None, model_shash = None):
+    
+    bins = np.linspace(0, 1, 11)
+    bins_inc = bins[1]-bins[0]
+
+    if(uncertainty_type=='bnn'):
+        bnn_cdf = np.zeros((np.shape(bnn_cpd)[0],)) 
+        for sample in np.arange(0,np.shape(bnn_cpd)[0]):
+            i = np.where(onehot_val[sample,0]<bnn_cpd[sample,:])[0]
+            bnn_cdf[sample] = len(i)/np.shape(bnn_cpd)[1]
+
+        pit_hist = np.histogram(bnn_cdf,
+                                bins,
+                                weights=np.ones_like(bnn_cdf)/float(len(bnn_cdf)),
+                               )
+    else:
+        shash_pred = model_shash.predict(x_val)
+        mu = shash_pred[:,0]
+        sigma = shash_pred[:,1]
+        gamma = shash_pred[:,2]
+        tau = np.ones(np.shape(mu))
+        F = shash.cdf(onehot_val[:,0], mu, sigma, gamma, tau)
+        pit_hist = np.histogram(F,
+                                  bins,
+                                  weights=np.ones_like(F)/float(len(F)),
+                                 )
+    # pit metric from Bourdin et al. (2014) and Nipen and Stull (2011)
+    # compute expected deviation of PIT for a perfect forecast
+    B   = len(pit_hist[0])
+    D   = np.sqrt(1/B * np.sum( (pit_hist[0] - 1/B)**2 ))
+    EDp = np.sqrt( (1.-1/B) / (onehot_val.shape[0]*B) )
+
+    return bins, pit_hist, D, EDp
+
+
+
+
+
+def compute_nll(uncertainty_type, onehot_val, bnn_cpd=None, model_shash=None, x_val=None):
+    
+    if(uncertainty_type=='bnn'):
+        # bnn NLL
+        bins_inc = 2.5
+        bins = np.arange(-100,110,bins_inc)
+        nloglike = np.zeros((np.shape(bnn_cpd)[0],))
+        for sample in np.arange(0,np.shape(bnn_cpd)[0]):
+            hist_bnn = np.histogram(bnn_cpd[sample,:],
+                                    bins
+                                   )
+            i = np.argmin(np.abs( (bins[:-1]+bins_inc/2) - onehot_val[sample,0]))
+            if(hist_bnn[0][i]==0):
+                print('---sample ' + str(sample) + ' negative-log-likelihood being set to 10.0 due to log(0) issues')        
+                nloglike[sample] = 10. #np.nan
+            else:
+                nloglike[sample] = -np.log(hist_bnn[0][i]/(bins_inc*np.sum(hist_bnn[0])))
+    else:
+        # shash NLL 
+        shash_pred = model_shash.predict(x_val)
+        mu = shash_pred[:,0]
+        sigma = shash_pred[:,1]
+        gamma = shash_pred[:,2]
+        tau = np.ones(np.shape(mu))
+        nloglike = -shash.log_prob(onehot_val[:,0], mu, sigma, gamma, tau)        
+        
+    return nloglike
