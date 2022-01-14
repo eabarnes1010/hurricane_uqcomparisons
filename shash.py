@@ -65,7 +65,7 @@ import scipy.stats
 import tensorflow as tf
 
 __author__ = "Randal J. Barnes and Elizabeth A. Barnes"
-__date__ = "30 October 2021"
+__date__ = "14 January 2022"
 
 
 SQRT_TWO = 1.4142135623730950488016887
@@ -120,7 +120,7 @@ def _jones_pewsey_P(q):
         -0.0283864669666028,
         0.0257772853487392,
     ]
-    return tf.math.exp(tf.math.polyval(coeffs, q))
+    return tf.math.exp(tf.math.polyval(coeffs, tf.cast(q, dtype=tf.float32)))
 
 
 def cdf(x, mu, sigma, gamma, tau):
