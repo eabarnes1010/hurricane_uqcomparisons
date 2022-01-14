@@ -158,7 +158,27 @@ def plot_history(history, model_name):
     plt.savefig("figures/model_diagnostics/" + model_name + ".png", dpi=DPIFIG)
     plt.show()
     
+def compute_interquartile_capture(uncertainty_type, onehot_val, bnn_cpd=None, x_val=None, model_shash = None):
     
+    bins = np.linspace(0, 1, 11)
+    bins_inc = bins[1]-bins[0]
+
+    if(uncertainty_type=='bnn'):
+        lower = np.percentile(bnn_cpd,25)
+        upper = np.percentile(bnn_cpd,50)        
+        iqr_capture = np.logical_and(onehot_val[:,0]>lower,onehot_val[:,0]<upper)
+    else:
+        shash_pred = model_shash.predict(x_val)
+        mu = shash_pred[:,0]
+        sigma = shash_pred[:,1]
+        gamma = shash_pred[:,2]
+        tau = np.ones(np.shape(mu))
+
+        lower = shash.quantile(0.25, mu, sigma, gamma, tau)
+        upper = shash.quantile(0.75, mu, sigma, gamma, tau)
+        iqr_capture = np.logical_and(onehot_val[:,0]>lower,onehot_val[:,0]<upper)
+
+    return np.sum(iqr_capture.astype(int))/np.shape(iqr_capture)[0]
     
     
     
@@ -197,9 +217,6 @@ def compute_pit(uncertainty_type, onehot_val, bnn_cpd=None, x_val=None, model_sh
     return bins, pit_hist, D, EDp
 
 
-
-
-
 def compute_nll(uncertainty_type, onehot_val, bnn_cpd=None, model_shash=None, x_val=None):
     
     if(uncertainty_type=='bnn'):
@@ -227,3 +244,11 @@ def compute_nll(uncertainty_type, onehot_val, bnn_cpd=None, model_shash=None, x_
         nloglike = -shash.log_prob(onehot_val[:,0], mu, sigma, gamma, tau)        
         
     return nloglike
+
+def compute_errors(onehot_val, pred_mean, pred_median, pred_mode):
+
+    mean_error = np.mean(np.abs(pred_mean - onehot_val[:,0]))
+    median_error = np.mean(np.abs(pred_median - onehot_val[:,0]))
+    mode_error = np.mean(np.abs(pred_mode - onehot_val[:,0]))
+    
+    return mean_error, median_error, mode_error
