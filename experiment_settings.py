@@ -226,7 +226,7 @@ def get_settings(experiment_name):
             "momentum": 0.9,
             "nesterov": True,
             "batch_size": 64,
-            "rng_seed": 18311, #999
+            "rng_seed": [605, 122, 786, 999, 311,],
             "act_fun": "relu",
             "n_epochs": 25_000,
             "patience": 100,
@@ -248,7 +248,7 @@ def get_settings(experiment_name):
             "momentum": 0.9,
             "nesterov": True,
             "batch_size": 64,
-            "rng_seed": 18311, #999
+            "rng_seed": [605, 122, 786, 999, 311,], 
             "act_fun": "relu",
             "n_epochs": 25_000,
             "patience": 100,

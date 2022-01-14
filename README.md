@@ -28,7 +28,7 @@ pip install tqdm
 ```
 
 ### Credits
-This work is a collaborative effort between [Dr. Elizabeth A. Barnes](https://sites.google.com/rams.colostate.edu/barnesresearchgroup/home) and [Dr. Randal J. Barnes](https://cse.umn.edu/cege/randal-j-barnes) and Dr. Mark DeMaria. 
+This work is a collaborative effort between [Dr. Elizabeth A. Barnes](https://barnes.atmos.colostate.edu) and [Dr. Randal J. Barnes](https://cse.umn.edu/cege/randal-j-barnes) and Dr. Mark DeMaria. 
 
 #### Funding sources
 
