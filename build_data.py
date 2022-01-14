@@ -233,14 +233,15 @@ def build_hurricane_data(data_path, settings, verbose=0):
             clusters, dist = kmeans(data, numclust, iter=500, seed=settings["rng_seed"])
             cluster_label, _ = vq(data,clusters)
             
-            fig, axs = plt.subplots(1,2, figsize=(15,5))
-            plt.sca(axs[0])
-            plt.hist(cluster_label,np.arange(-.5,numclust+.5,1.), width=.98)
-            plt.sca(axs[1])
-            for ic in np.arange(0,numclust):
-                plt.plot(x_names,clusters[ic,:], label='cluster ' + str(ic),linewidth=2)
-            plt.legend()
-            plt.show() 
+            if verbose != 0:
+                fig, axs = plt.subplots(1,2, figsize=(15,5))
+                plt.sca(axs[0])
+                plt.hist(cluster_label,np.arange(-.5,numclust+.5,1.), width=.98)
+                plt.sca(axs[1])
+                for ic in np.arange(0,numclust):
+                    plt.plot(x_names,clusters[ic,:], label='cluster ' + str(ic),linewidth=2)
+                plt.legend()
+                plt.show() 
             
             class_freq = np.bincount(cluster_label)
             cluster_out = np.argmin(class_freq)
