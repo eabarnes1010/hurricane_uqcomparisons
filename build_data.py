@@ -289,6 +289,11 @@ def build_hurricane_data(data_path, settings, verbose=0):
                                           "y_val"   : onehot_val[:,0], 
                                           "y_eval"  : onehot_eval[:,0]}, 
                                          sigfigs=1)
+        
+    # change dtype of onehot
+    onehot_train = onehot_train.astype('float32')
+    onehot_val = onehot_val.astype('float32')    
+    onehot_eval = onehot_eval.astype('float32')        
 
     return (
         x_train,
