@@ -26,6 +26,7 @@ def get_settings(experiment_name):
             "ridge_param": 0.0,
             "n_val": 300,
             "n_train": "max",
+            "train_condition": None,            
         }, 
         
         "intensity1_AL72": {
@@ -47,6 +48,7 @@ def get_settings(experiment_name):
             "ridge_param": 0.0,
             "n_val": 300,
             "n_train": "max",
+            "train_condition": None,            
         },      
         
         "intensity2_EPCP48": {
@@ -68,6 +70,7 @@ def get_settings(experiment_name):
             "ridge_param": 0.0,
             "n_val": 512,
             "n_train": "max",
+            "train_condition": None,            
         },  
         "intensity3_EPCP48": {
             "filename": "nnfit_vlist_intensity_and_track_extended.dat",
@@ -88,6 +91,7 @@ def get_settings(experiment_name):
             "ridge_param": 0.0,
             "n_val": 512,
             "n_train": "max",
+            "train_condition": None,            
         },   
         
         "intensity4_EPCP72": {
@@ -109,6 +113,7 @@ def get_settings(experiment_name):
             "ridge_param": 0.0,
             "n_val": 512,
             "n_train": "max",
+            "train_condition": None,            
         },        
         "intensity5_EPCP72": {
             "filename": "nnfit_vlist_intensity_and_track_extended.dat",
@@ -129,6 +134,7 @@ def get_settings(experiment_name):
             "ridge_param": 0.0,
             "n_val": 512,
             "n_train": "max",
+            "train_condition": None,            
         }, 
         "intensity7_EPCP72": {
             "filename": "nnfit_vlist_intensity_and_track_extended.dat",
@@ -149,6 +155,7 @@ def get_settings(experiment_name):
             "ridge_param": 0.0,
             "n_val": 512,
             "n_train": "max",
+            "train_condition": None,            
         },         
         
         "intensity8_AL96": {
@@ -170,6 +177,7 @@ def get_settings(experiment_name):
             "ridge_param": 0.0,
             "n_val": 300,
             "n_train": "max",
+            "train_condition": None,            
         }, 
         
         "intensity9_AL96": {
@@ -191,6 +199,7 @@ def get_settings(experiment_name):
             "ridge_param": 0.0,
             "n_val": 300,
             "n_train": "max",
+            "train_condition": None,            
         },        
         "intensity10_EPCP96": {
             "filename": "nnfit_vlist_intensity_and_track_extended.dat",
@@ -211,6 +220,7 @@ def get_settings(experiment_name):
             "ridge_param": 0.0,
             "n_val": 512,
             "n_train": "max",
+            "train_condition": None,            
         },        
         "intensity11_EPCP96": {
             "filename": "nnfit_vlist_intensity_and_track_extended.dat",
@@ -231,6 +241,7 @@ def get_settings(experiment_name):
             "ridge_param": 0.0,
             "n_val": 512,
             "n_train": "max",
+            "train_condition": None,            
         },         
         "intensity12_AL48": {
             "filename": "nnfit_vlist_intensity_and_track_extended.dat",
@@ -251,6 +262,7 @@ def get_settings(experiment_name):
             "ridge_param": 0.0,
             "n_val": 300,
             "n_train": "max",
+            "train_condition": None,            
         }, 
         
         "intensity13_AL48": {
@@ -272,6 +284,7 @@ def get_settings(experiment_name):
             "ridge_param": 0.0,
             "n_val": 300,
             "n_train": "max",
+            "train_condition": None,                      
         },         
         
 #         "intensity100_EPCP48": {
