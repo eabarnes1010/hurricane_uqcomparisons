@@ -259,7 +259,8 @@ def build_hurricane_data(data_path, settings, verbose=0):
             raise ValueError("no such train_condition")
 
     except:
-        print('settings["train_condition"] is undefined')
+        # print('settings["train_condition"] is undefined')
+        pass
     
     
     #======================================================================    
