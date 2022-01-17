@@ -200,7 +200,7 @@ def build_hurricane_data(data_path, settings, verbose=0):
     cluster_out = np.nan    
     cluster_eval = np.nan
     try:
-        print("train_condition = " + settings["train_condition"])
+        # print("train_condition = " + settings["train_condition"])
         
         if(settings["train_condition"]=='DV12<=15'):
             i_var        = x_names.index('DV12')
@@ -237,10 +237,17 @@ def build_hurricane_data(data_path, settings, verbose=0):
                 fig, axs = plt.subplots(1,2, figsize=(15,5))
                 plt.sca(axs[0])
                 plt.hist(cluster_label,np.arange(-.5,numclust+.5,1.), width=.98)
+                plt.title('Sample Count by Cluster')
+                plt.ylabel('number of samples')
+                plt.xlabel('cluster')
+                plt.xticks((0,1,2,3))
                 plt.sca(axs[1])
                 for ic in np.arange(0,numclust):
                     plt.plot(x_names,clusters[ic,:], label='cluster ' + str(ic),linewidth=2)
                 plt.legend()
+                plt.title('Cluster Centroid')
+                plt.ylabel('standardized units')
+                plt.xlabel('predictor')
                 plt.show() 
             
             class_freq = np.bincount(cluster_label)

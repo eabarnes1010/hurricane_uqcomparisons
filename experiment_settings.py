@@ -6,7 +6,6 @@ __date__ = "30 October 2021"
 
 def get_settings(experiment_name):
     experiments = {     
-       
         
         "intensity0_AL72": {
             "filename": "nnfit_vlist_intensity_and_track_extended.dat",
