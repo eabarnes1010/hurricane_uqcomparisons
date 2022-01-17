@@ -181,23 +181,11 @@ def compute_interquartile_capture(uncertainty_type, onehot_val, bnn_cpd=None, x_
 
     if(uncertainty_type=='bnn'):
         lower, upper = compute_iqr(uncertainty_type, onehot_val, bnn_cpd=bnn_cpd)
-        # lower = np.percentile(bnn_cpd,25)
-        # upper = np.percentile(bnn_cpd,75)        
-        # iqr_capture = np.logical_and(onehot_val[:,0]>lower,onehot_val[:,0]<upper)
     else:
-#         shash_pred = model_shash.predict(x_val)
-#         mu = shash_pred[:,0]
-#         sigma = shash_pred[:,1]
-#         gamma = shash_pred[:,2]
-#         tau = np.ones(np.shape(mu))
-
-#         lower = shash.quantile(0.25, mu, sigma, gamma, tau)
-#         upper = shash.quantile(0.75, mu, sigma, gamma, tau)
         lower, upper = compute_iqr(uncertainty_type, onehot_val, x_val=x_val, model_shash=model_shash)
     iqr_capture = np.logical_and(onehot_val[:,0]>lower,onehot_val[:,0]<upper)
 
     return np.sum(iqr_capture.astype(int))/np.shape(iqr_capture)[0]
-    
     
     
 def compute_pit(uncertainty_type, onehot_val, bnn_cpd=None, x_val=None, model_shash = None):
@@ -290,6 +278,9 @@ def compute_iqr_error_corr(uncertainty_type, onehot_val, bnn_cpd=None, pred_medi
     
     # compute correlation between median error and IQR
     iqr_error_spearman = stats.spearmanr(iqr,median_errors)
-    iqr_error_pearson  = stats.pearsonr(iqr,median_errors)
+    try:
+        iqr_error_pearson  = stats.pearsonr(iqr,median_errors)
+    except:
+        iqr_error_pearson = [np.nan,np.nan]
 
     return iqr_error_spearman, iqr_error_pearson
