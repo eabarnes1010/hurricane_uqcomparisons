@@ -319,3 +319,97 @@ def build_bnn_model(
     # model_params = tf.keras.models.Model(inputs=inputs, outputs=params) # to be used later to study the params if you want to
     
     return model
+
+
+def build_mcdrop_model(
+    x_train, onehot_train, hiddens, output_shape, ridge_penalty=0.0, act_fun="relu", rng_seed=999, dropout_rate=0.0,
+):
+    """Build the fully-connected MC-Dropout architecture with
+    internal scaling.
+
+    Arguments
+    ---------
+    x_train : numpy.ndarray
+        The training split of the x data.
+        shape = [n_train, n_features].
+
+    onehot_train : numpy.ndarray
+        The training split of the scaled y data is in the first column.
+        shape = [n_train,].
+
+    hiddens : list (integers)
+        Numeric list containing the number of neurons for each layer.
+
+    output_shape : integer 
+        The prediction.
+
+    ridge_penalty : float, default=0.0
+        The L2 regularization penalty for the first layer.
+        ***NOT USED FOR THE BNN***
+
+    act_fun : function, default="relu"
+        The activation function to use on the deep hidden layers.
+    
+    rng_seed : integer, default=999
+        Random seed for layer initialization
+    
+
+    Returns
+    -------
+    model : tensorflow.keras.models.Model
+
+    Notes
+    -----
+
+    """
+    # The avg and std for feature normalization are computed from x_train.
+    # Using the .adapt method, these are set once and do not change, but
+    # the constants travel with the model.
+    inputs = tf.keras.Input(shape=x_train.shape[1:])
+
+    normalizer = tf.keras.layers.Normalization()
+    normalizer.adapt(x_train)
+    x = normalizer(inputs)
+
+    # Initialize the first hidden layer.
+    x = tf.keras.layers.Dense(
+        units=hiddens[0],
+        activation=act_fun,
+        use_bias=True,
+        kernel_regularizer=regularizers.l1_l2(l1=0.00, l2=ridge_penalty),
+        bias_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed),
+        kernel_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed),     
+    )(x)
+    
+    x = tf.keras.layers.Dropout(
+        rate=dropout_rate,
+        seed=rng_seed,            
+    )(x)    
+
+    # Initialize the subsequent hidden layers.
+    for layer_size in hiddens[1:]:
+        x = tf.keras.layers.Dense(
+            units=hiddens[0],
+            activation=act_fun,
+            use_bias=True,
+            kernel_regularizer=regularizers.l1_l2(l1=0.00, l2=ridge_penalty),
+            bias_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed),
+            kernel_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed),
+        )(x)
+        
+        x = tf.keras.layers.Dropout(
+            rate=dropout_rate,
+            seed=rng_seed,            
+        )(x)
+    
+    # final layer
+    x = tf.keras.layers.Dense(output_shape,
+                              activation='linear',
+                              use_bias=True,
+                              kernel_initializer=tf.keras.initializers.HeNormal(seed=rng_seed),
+                              bias_initializer=tf.keras.initializers.HeNormal(seed=rng_seed),
+                             )(x)        
+    
+    model = tf.keras.models.Model(inputs=inputs, outputs=x)    
+    
+    return model

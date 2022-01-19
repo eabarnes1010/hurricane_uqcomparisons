@@ -173,6 +173,8 @@ def build_hurricane_data(data_path, settings, verbose=0):
     # are required by tensorflow; the number of columns must equal the number
     # of distribution parameters.
     if settings["uncertainty_type"] == "bnn":
+        n_parameters = 1        
+    elif settings["uncertainty_type"] == "mcdrop":
         n_parameters = 1
     elif settings["uncertainty_type"] == "shash2":
         n_parameters = 2
