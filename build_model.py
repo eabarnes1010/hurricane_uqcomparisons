@@ -371,7 +371,7 @@ def build_mcdrop_model(
     normalizer.adapt(x_train)
     x = normalizer(inputs)
 
-    # Initialize the first hidden layer.
+    # Initialize the first hidden layer.   
     x = tf.keras.layers.Dense(
         units=hiddens[0],
         activation=act_fun,
@@ -387,7 +387,7 @@ def build_mcdrop_model(
     )(x)    
 
     # Initialize the subsequent hidden layers.
-    for layer_size in hiddens[1:]:
+    for layer_size in hiddens[1:]:        
         x = tf.keras.layers.Dense(
             units=hiddens[0],
             activation=act_fun,
