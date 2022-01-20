@@ -28,7 +28,7 @@ class Exponentiate(keras.layers.Layer):
 
 
 def build_shash_model(
-    x_train, onehot_train, hiddens, output_shape, ridge_penalty=0.0, act_fun="relu", rng_seed=999,
+    x_train, onehot_train, hiddens, output_shape, ridge_penalty=0.0, act_fun="relu", rng_seed=999, dropout_rate=0.0,
 ):
     """Build the fully-connected shash network architecture with
     internal scaling.
@@ -123,6 +123,10 @@ def build_shash_model(
             bias_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed),
             kernel_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed),
         )(x)
+        # x = tf.keras.layers.Dropout(
+        #     rate=dropout_rate,
+        #     seed=rng_seed,            
+        # )(x)        
 
         # Initialize the subsequent hidden layers.
         for layer_size in hiddens[1:]:
@@ -134,6 +138,10 @@ def build_shash_model(
                 bias_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed),
                 kernel_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed),
             )(x)
+            # x = tf.keras.layers.Dropout(
+            #     rate=dropout_rate,
+            #     seed=rng_seed,            
+            # )(x)            
 
     # Compute the mean and standard deviation of the y_train data to rescale
     # the mu and sigma parameters.
