@@ -26,7 +26,7 @@ def print_summary_statistics(data_dictionary, sigfigs=2, plusfigs=1, file=sys.st
         "max" : maximum value
         "avg" : arithmetic average
         "std" : standard deviation (sample)
-        "irq" : inter-quartile range
+        "iqr" : inter-quartile range
 
     Arguments
     ---------
@@ -100,7 +100,7 @@ def print_summary_statistics(data_dictionary, sigfigs=2, plusfigs=1, file=sys.st
     print(
         tabulate.tabulate(
             table,
-            [" ", "cnt", "min", "25%", "50%", "75%", "max", "avg", "std", "irq"],
+            [" ", "cnt", "min", "25%", "50%", "75%", "max", "avg", "std", "iqr"],
             tablefmt="presto",
             floatfmt=(
                 "s",

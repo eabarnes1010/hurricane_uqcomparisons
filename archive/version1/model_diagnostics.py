@@ -159,8 +159,10 @@ def plot_history(history, model_name):
     plt.show()
     
 def compute_iqr(uncertainty_type, onehot_val, bnn_cpd=None, x_val=None, model_shash = None):
- 
-    if(uncertainty_type in ("shash","shash2","shash3","shash4")):
+    if(uncertainty_type=='bnn'):
+        lower = np.percentile(bnn_cpd,25,axis=1)
+        upper = np.percentile(bnn_cpd,75,axis=1)        
+    else:
         shash_pred = model_shash.predict(x_val)
         mu = shash_pred[:,0]
         sigma = shash_pred[:,1]
@@ -169,9 +171,6 @@ def compute_iqr(uncertainty_type, onehot_val, bnn_cpd=None, x_val=None, model_sh
 
         lower = shash.quantile(0.25, mu, sigma, gamma, tau)
         upper = shash.quantile(0.75, mu, sigma, gamma, tau)
-    else:
-        lower = np.percentile(bnn_cpd,25,axis=1)
-        upper = np.percentile(bnn_cpd,75,axis=1)              
 
     return lower, upper
     
@@ -180,11 +179,10 @@ def compute_interquartile_capture(uncertainty_type, onehot_val, bnn_cpd=None, x_
     bins = np.linspace(0, 1, 11)
     bins_inc = bins[1]-bins[0]
 
-    if(uncertainty_type in ("shash","shash2","shash3","shash4")):
-        lower, upper = compute_iqr(uncertainty_type, onehot_val, x_val=x_val, model_shash=model_shash)
-    else:
+    if(uncertainty_type=='bnn'):
         lower, upper = compute_iqr(uncertainty_type, onehot_val, bnn_cpd=bnn_cpd)
-       
+    else:
+        lower, upper = compute_iqr(uncertainty_type, onehot_val, x_val=x_val, model_shash=model_shash)
     iqr_capture = np.logical_and(onehot_val[:,0]>lower,onehot_val[:,0]<upper)
 
     return np.sum(iqr_capture.astype(int))/np.shape(iqr_capture)[0]
@@ -195,7 +193,17 @@ def compute_pit(uncertainty_type, onehot_val, bnn_cpd=None, x_val=None, model_sh
     bins = np.linspace(0, 1, 11)
     bins_inc = bins[1]-bins[0]
 
-    if(uncertainty_type in ("shash","shash2","shash3","shash4")):
+    if(uncertainty_type=='bnn'):
+        bnn_cdf = np.zeros((np.shape(bnn_cpd)[0],)) 
+        for sample in np.arange(0,np.shape(bnn_cpd)[0]):
+            i = np.where(onehot_val[sample,0]<bnn_cpd[sample,:])[0]
+            bnn_cdf[sample] = len(i)/np.shape(bnn_cpd)[1]
+
+        pit_hist = np.histogram(bnn_cdf,
+                                bins,
+                                weights=np.ones_like(bnn_cdf)/float(len(bnn_cdf)),
+                               )
+    else:
         shash_pred = model_shash.predict(x_val)
         mu = shash_pred[:,0]
         sigma = shash_pred[:,1]
@@ -206,16 +214,6 @@ def compute_pit(uncertainty_type, onehot_val, bnn_cpd=None, x_val=None, model_sh
                                   bins,
                                   weights=np.ones_like(F)/float(len(F)),
                                  )
-    else:
-        bnn_cdf = np.zeros((np.shape(bnn_cpd)[0],)) 
-        for sample in np.arange(0,np.shape(bnn_cpd)[0]):
-            i = np.where(onehot_val[sample,0]<bnn_cpd[sample,:])[0]
-            bnn_cdf[sample] = len(i)/np.shape(bnn_cpd)[1]
-
-        pit_hist = np.histogram(bnn_cdf,
-                                bins,
-                                weights=np.ones_like(bnn_cdf)/float(len(bnn_cdf)),
-                               )       
     # pit metric from Bourdin et al. (2014) and Nipen and Stull (2011)
     # compute expected deviation of PIT for a perfect forecast
     B   = len(pit_hist[0])
@@ -226,16 +224,8 @@ def compute_pit(uncertainty_type, onehot_val, bnn_cpd=None, x_val=None, model_sh
 
 
 def compute_nll(uncertainty_type, onehot_val, bnn_cpd=None, model_shash=None, x_val=None):
-
-    if(uncertainty_type in ("shash","shash2","shash3","shash4")):
-        # shash NLL 
-        shash_pred = model_shash.predict(x_val)
-        mu = shash_pred[:,0]
-        sigma = shash_pred[:,1]
-        gamma = shash_pred[:,2]
-        tau = np.ones(np.shape(mu))
-        nloglike = -shash.log_prob(onehot_val[:,0], mu, sigma, gamma, tau)        
-    else:
+    
+    if(uncertainty_type=='bnn'):
         # bnn NLL
         bins_inc = 2.5
         bins = np.arange(-100,110,bins_inc)
@@ -250,7 +240,15 @@ def compute_nll(uncertainty_type, onehot_val, bnn_cpd=None, model_shash=None, x_
                 nloglike[sample] = 10. #np.nan
             else:
                 nloglike[sample] = -np.log(hist_bnn[0][i]/(bins_inc*np.sum(hist_bnn[0])))
-       
+    else:
+        # shash NLL 
+        shash_pred = model_shash.predict(x_val)
+        mu = shash_pred[:,0]
+        sigma = shash_pred[:,1]
+        gamma = shash_pred[:,2]
+        tau = np.ones(np.shape(mu))
+        nloglike = -shash.log_prob(onehot_val[:,0], mu, sigma, gamma, tau)        
+        
     return nloglike
 
 def compute_errors(onehot_val, pred_mean, pred_median, pred_mode):
@@ -269,11 +267,10 @@ def compute_iqr_error_corr(uncertainty_type, onehot_val, bnn_cpd=None, pred_medi
     bins = np.linspace(0, 1, 11)
     bins_inc = bins[1]-bins[0]
 
-    if(uncertainty_type in ("shash","shash2","shash3","shash4")):
-        lower, upper = compute_iqr(uncertainty_type, onehot_val, x_val=x_val, model_shash=model_shash)
-    else:
+    if(uncertainty_type=='bnn'):
         lower, upper = compute_iqr(uncertainty_type, onehot_val, bnn_cpd=bnn_cpd)
-       
+    else:
+        lower, upper = compute_iqr(uncertainty_type, onehot_val, x_val=x_val, model_shash=model_shash)
     iqr   = upper - lower
     
     # compute median_errors

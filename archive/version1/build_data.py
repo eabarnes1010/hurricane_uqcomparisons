@@ -178,8 +178,10 @@ def build_hurricane_data(data_path, settings, verbose=0):
     # remaining columns are zero -- i.e. dummy columns.  These dummy columns
     # are required by tensorflow; the number of columns must equal the number
     # of distribution parameters.
-    if settings["uncertainty_type"] in ("bnn","mcdrop","reg"):
+    if settings["uncertainty_type"] == "bnn":
         n_parameters = 1        
+    elif settings["uncertainty_type"] == "mcdrop":
+        n_parameters = 1
     elif settings["uncertainty_type"] == "shash2":
         n_parameters = 2
     elif settings["uncertainty_type"] == "shash3":
@@ -208,7 +210,28 @@ def build_hurricane_data(data_path, settings, verbose=0):
     
    
     try:
-
+        # print("train_condition = " + settings["train_condition"])
+        
+#         if(settings["train_condition"]=='DV12<=15'):
+#             i_var        = x_names.index('DV12')
+#             i_index      = np.where(x_train[:,i_var]<=15)[0]
+#             x_train      = x_train[i_index,:]
+#             onehot_train = onehot_train[i_index,:]
+            
+#             i_index      = np.where(x_val[:,i_var]<=15)[0]
+#             x_val        = x_val[i_index,:]
+#             onehot_val   = onehot_val[i_index,:]
+            
+#         elif(settings["train_condition"]=='VMXC<=90'):
+#             i_var        = x_names.index('VMXC')
+#             i_index      = np.where(x_train[:,i_var]<=90)[0]
+#             x_train      = x_train[i_index,:]
+#             onehot_train = onehot_train[i_index,:] 
+            
+#             i_index      = np.where(x_val[:,i_var]<=90)[0]
+#             x_val        = x_val[i_index,:]
+#             onehot_val   = onehot_val[i_index,:]            
+            
         if(settings["train_condition"]=='no_2020'):
             drop_year = (2020,)
             if verbose != 0:
