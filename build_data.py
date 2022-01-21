@@ -128,6 +128,7 @@ def build_hurricane_data(data_path, settings, verbose=0):
     # Get the data from the specified file and filter out the unwanted rows.
     datafile_path = data_path + settings["filename"]
     df_raw = pd.read_table(datafile_path, sep="\s+")
+    df_raw = df_raw.rename(columns={'Date': 'year'})    
 
     df = df_raw[
         (df_raw["ATCF"].str.contains(settings["basin"])) &
@@ -140,40 +141,101 @@ def build_hurricane_data(data_path, settings, verbose=0):
     # Shuffle the rows in the df Dataframe, using the numpy rng.
     # rng = np.random.default_rng(settings['rng_seed'])
     df = df.sample(frac=1,random_state=settings['rng_seed'])
+    df = df.reset_index(drop=True)
 
-    # Extract the x columns and the y column.
-    x_data = df[x_names].to_numpy()
-    y_data = np.squeeze(df[y_name].to_numpy())
-
-    # Get the training and validation splits.
-    n_val   = settings["n_val"]
-    n_train = settings["n_train"]
-    if(settings["n_train"] == "max"):
-        n_train = np.shape(x_data)[0] - n_val
-    else:
-        n_train = settings["n_train"]
-        
-    if(n_val + n_train > np.shape(x_data)[0]):
-        raise ValueError('n_val + n_train > np.shape(x_data)')
+    #======================================================================
+    # Train/Validation/Test Split
     
-    x_train = x_data[:n_train]
-    y_train = y_data[:n_train]
+    # Get the testing data
+    if settings["test_condition"] is None:
+        pass
+    elif settings["test_condition"] == "cluster":
         
-    if n_val == 0:
-        x_val  = x_train
-        y_val  = y_train
-        df_val = df.copy()
+        from scipy.cluster.vq import kmeans,vq
+        numclust = 6
+        
+        data = np.copy(df[x_names].to_numpy())
+        data_mean = np.mean(data,axis=0)
+        data_std  = np.std(data,axis=0)
+        data = (data - data_mean)/data_std
+
+        clusters, dist = kmeans(data, numclust, iter=500, seed=settings["rng_seed"])
+        cluster_label, _ = vq(data,clusters)
+        class_freq = np.bincount(cluster_label)
+        cluster_out = np.argmin(class_freq)
+
+        index = np.where(cluster_label == cluster_out)[0]
+        df_test = df.iloc[index]
+        x_test = df_test[x_names].to_numpy()
+        y_test = np.squeeze(df_test[y_name].to_numpy())
+        df_test = df_test.reset_index(drop=True)
+        
+        df = df.drop(index)
+        df = df.reset_index(drop=True)
+        
+        if verbose != 0:
+            fig, axs = plt.subplots(1,2, figsize=(15,5))
+            plt.sca(axs[0])
+            plt.hist(cluster_label,np.arange(-.5,numclust+.5,1.), width=.98)
+            plt.title('Sample Count by Cluster')
+            plt.ylabel('number of samples')
+            plt.xlabel('cluster')
+            plt.xticks((0,1,2,3))
+            plt.sca(axs[1])
+            for ic in np.arange(0,numclust):
+                plt.plot(x_names,clusters[ic,:], label='cluster ' + str(ic),linewidth=2)
+            plt.legend()
+            plt.title('Cluster Centroid')
+            plt.ylabel('standardized units')
+            plt.xlabel('predictor')
+            plt.show() 
+    else:
+        years = settings["test_condition"]
+        if verbose != 0:
+            print('years' + str(years) + ' withheld for testing')
+        index = df.index[df['year'].isin(years)]   
+        df_test = df.iloc[index]
+        x_test = df_test[x_names].to_numpy()
+        y_test = np.squeeze(df_test[y_name].to_numpy())
+        df_test = df_test.reset_index(drop=True)
+        
+        df = df.drop(index)
+        df = df.reset_index(drop=True)
+        
+    # get the validation data
+    if settings["val_condition"] == "random":
+        index = np.arange(0,settings["n_val"])
+        if(len(index)<100):
+            raise Warning("Are you sure you want n_val > 100?")
+            
+    elif settings["val_condition"] == "years":
+        unique_years = df['year'].unique()
+        years = unique_years[:settings["n_val"]]
+        index = df.index[df['year'].isin(years)] 
+        
+    df_val = df.iloc[index]
+    x_val = df_val[x_names].to_numpy()
+    y_val = np.squeeze(df_val[y_name].to_numpy())
+    df_val = df_val.reset_index(drop=True)
+    
+    df = df.drop(index)
+    df = df.reset_index(drop=True)
+    
+    if settings["test_condition"] is None:
+        df_test = df_val.copy()
+        x_test  = copy.deepcopy(x_val)
+        y_test  = copy.deepcopy(y_val)
+    
+    # Subsample training if desired
+    if settings["n_train"] == "max":
         df_train = df.copy()
     else:
-        x_val    = x_data[n_train:n_train+n_val]
-        y_val    = y_data[n_train:+n_train+n_val]
-        df_val   = df.iloc[n_train:+n_train+n_val]
-        df_train = df.iloc[:n_train]
-
-    # reset dataframe indexes
-    df_train=df_train.reset_index()
-    df_val=df_val.reset_index()
+        df_train = df.iloc[:settings["n_train"]]
+    x_train = df_train[x_names].to_numpy()
+    y_train = np.squeeze(df_train[y_name].to_numpy())
+    df_train = df_train.reset_index(drop=True)
     
+    #======================================================================    
     # Create 'onehot' y arrays. The y values go in the first column, and the
     # remaining columns are zero -- i.e. dummy columns.  These dummy columns
     # are required by tensorflow; the number of columns must equal the number
@@ -188,117 +250,26 @@ def build_hurricane_data(data_path, settings, verbose=0):
         n_parameters = 4
     else:
         raise NotImplementedError
-
+           
     onehot_train = np.zeros((len(y_train), n_parameters))
     onehot_val = np.zeros((len(y_val), n_parameters))
+    onehot_test = np.zeros((len(y_test), n_parameters))    
 
     onehot_train[:, 0] = y_train
     onehot_val[:, 0] = y_val
-    
-    x_eval       = copy.deepcopy(x_val)
-    onehot_eval  = copy.deepcopy(onehot_val)  
-    df_eval      = df_val.copy()    
-    
-    #======================================================================
-    # out of sample analysis
-    
-    # grab subset of training for evaluating out-of-sample predictions
-    cluster_out = np.nan    
-    cluster_eval = np.nan
-    
-   
-    try:
-
-        if(settings["train_condition"]=='no_2020'):
-            drop_year = (2020,)
-            if verbose != 0:
-                print('removing years' + str(drop_year) + ' from training and validation')
-
-            i_index      = df_train.index[df_train['Date'].isin(drop_year)].tolist()
-            x_eval       = np.append(x_eval,x_train[i_index,:],axis=0)
-            onehot_eval  = np.append(onehot_eval,onehot_train[i_index,:],axis=0)
-            df_eval      = df_eval.append(df_train.iloc[i_index], ignore_index=True, sort=False)
-            df_eval      = df_eval.reset_index()            
-            cluster_eval = np.asarray(list(map(int,df_eval['Date'].isin(drop_year).tolist())))        
-            cluster_out  = 1
-            
-            i_index      = df_train.index[~df_train['Date'].isin(drop_year)].tolist()            
-            x_train      = x_train[i_index,:]
-            onehot_train = onehot_train[i_index,:]
-            df_train     = df_train.iloc[i_index]
-            df_train     = df_train.reset_index()                        
-
-            i_index      = df_val.index[~df_val['Date'].isin(drop_year)].tolist()
-            x_val        = x_val[i_index,:]
-            onehot_val   = onehot_val[i_index,:]    
-            df_val       = df_val.iloc[i_index]
-            df_val       = df_val.reset_index()             
-            
-        elif(settings["train_condition"]=='cluster'):
-            from scipy.cluster.vq import kmeans,vq
-            numclust = 4
-            data = np.copy(x_train)
-            data_mean = np.mean(data,axis=0)
-            data_std  = np.std(data,axis=0)
-            data = (data - data_mean)/data_std
-            
-            clusters, dist = kmeans(data, numclust, iter=500, seed=settings["rng_seed"])
-            cluster_label, _ = vq(data,clusters)
-            
-            if verbose != 0:
-                fig, axs = plt.subplots(1,2, figsize=(15,5))
-                plt.sca(axs[0])
-                plt.hist(cluster_label,np.arange(-.5,numclust+.5,1.), width=.98)
-                plt.title('Sample Count by Cluster')
-                plt.ylabel('number of samples')
-                plt.xlabel('cluster')
-                plt.xticks((0,1,2,3))
-                plt.sca(axs[1])
-                for ic in np.arange(0,numclust):
-                    plt.plot(x_names,clusters[ic,:], label='cluster ' + str(ic),linewidth=2)
-                plt.legend()
-                plt.title('Cluster Centroid')
-                plt.ylabel('standardized units')
-                plt.xlabel('predictor')
-                plt.show() 
-            
-            class_freq = np.bincount(cluster_label)
-            cluster_out = np.argmin(class_freq)
-            cluster_eval, _ = vq((x_eval-data_mean)/data_std,clusters) 
-            
-            i_index      = np.where(cluster_label!=cluster_out)[0]
-            x_train      = x_train[i_index,:]
-            onehot_train = onehot_train[i_index,:]
-            
-            i_index      = np.where(cluster_eval!=cluster_out)[0]
-            x_val        = x_val[i_index,:]
-            onehot_val   = onehot_val[i_index,:]
-            df_val       = df_val.drop(i_index)
-            
-        else:
-            raise ValueError("no such train_condition")
-
-    except:
-        # print('settings["train_condition"] is undefined')
-        pass
-    
-    
-    #======================================================================    
-    
+    onehot_test[:, 0] = y_test
 
     # Make a descriptive dictionary.
     data_summary = {
         "datafile_path": datafile_path,
         "x_train_shape": tuple(x_train.shape),
         "x_val_shape": tuple(x_val.shape),
-        "x_eval_shape": tuple(x_eval.shape),        
+        "x_test_shape": tuple(x_test.shape),        
         "onehot_train_shape": tuple(onehot_train.shape),
         "onehot_val_shape": tuple(onehot_val.shape),
-        "onehot_eval_shape": tuple(onehot_eval.shape),        
+        "onehot_test_shape": tuple(onehot_test.shape),        
         "x_names": x_names,
         "y_name": y_name,
-        "cluster_eval": cluster_eval,
-        "cluster_out": cluster_out,
     }
 
     # Report the results.
@@ -308,22 +279,23 @@ def build_hurricane_data(data_path, settings, verbose=0):
     if verbose >= 2:
         toolbox.print_summary_statistics({"y_train" : onehot_train[:,0], 
                                           "y_val"   : onehot_val[:,0], 
-                                          "y_eval"  : onehot_eval[:,0]}, 
+                                          "y_test"  : onehot_test[:,0]}, 
                                          sigfigs=1)
         
     # change dtype of onehot
     onehot_train = onehot_train.astype('float32')
     onehot_val = onehot_val.astype('float32')    
-    onehot_eval = onehot_eval.astype('float32')        
+    onehot_test = onehot_test.astype('float32')        
 
     return (
+        data_summary,        
         x_train,
         onehot_train,
         x_val,
         onehot_val,
-        x_eval,
-        onehot_eval,        
-        data_summary,
+        x_test,
+        onehot_test,        
+        df_train,
         df_val,
-        df_eval,
+        df_test,
     )
