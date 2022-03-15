@@ -6,11 +6,35 @@ val_condition   : "random", "years"
 """
 
 __author__ = "Elizabeth A. Barnes and Randal J. Barnes"
-__date__ = "15 March 2022"
+__date__ = "21 January 2022"
 
 
 def get_settings(experiment_name):
-    experiments = {             
+    experiments = {     
+        "intensity999_EPCP72": {
+            "filename": "nnfit_vlist_intensity_and_track_extended.dat",
+            "uncertainty_type": 'shash3',  
+            "leadtime": 72,
+            "basin": "EP|CP",
+            "target": "intensity",
+            "undersample": False,
+            "hiddens": [15, 10],
+            "dropout_rate": [0.,0.,0.],
+            "ridge_param": [0.0,0.0],            
+            "learning_rate": 0.0001,
+            "momentum": 0.9,
+            "nesterov": True,
+            "batch_size": 64,
+            "rng_seed": 888,
+            "act_fun": "relu",
+            "n_epochs": 25_000,
+            "patience": 100,
+            "test_condition": (2018,),
+            "val_condition": "random",
+            "n_val": 256,
+            "n_train": "max",               
+        },                
+        
         "intensity0_EPCP72": {
             "filename": "nnfit_vlist_intensity_and_track_extended.dat",
             "uncertainty_type": 'reg',  

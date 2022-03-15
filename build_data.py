@@ -206,7 +206,7 @@ def build_hurricane_data(data_path, settings, verbose=0):
     if settings["val_condition"] == "random":
         index = np.arange(0,settings["n_val"])
         if(len(index)<100):
-            raise Warning("Are you sure you want n_val > 100?")
+            raise Warning("Are you sure you want n_val < 100?")
             
     elif settings["val_condition"] == "years":
         unique_years = df['year'].unique()
