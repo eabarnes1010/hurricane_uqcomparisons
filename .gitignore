@@ -12,8 +12,10 @@
 checkpoints/
 figures/
 saved_models/
+saved_metrics/
 model_metrics/
 documents/
+archive/
 
 # Apple stuff
 .DS_Store

@@ -81,11 +81,14 @@ def make_model(settings, x_train, onehot_train, model_compile=False):
 
         if model_compile == True:        
             model.compile(
-                optimizer=optimizers.SGD(
+                optimizer=optimizers.Adam(
                     learning_rate=settings["learning_rate"],
-                    momentum=settings["momentum"],
-                    nesterov=settings["nesterov"],
                 ),
+                # optimizer=optimizers.SGD(
+                #     learning_rate=settings["learning_rate"],
+                #     momentum=settings["momentum"],
+                #     nesterov=settings["nesterov"],
+                # ),
                 loss=compute_shash_NLL,
                 metrics=[
                     CustomMAE(name="custom_mae"),

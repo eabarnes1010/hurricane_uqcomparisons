@@ -10,6 +10,7 @@ clr_shash = 'teal'
 clr_bnn   = 'orange'
 clr_truth = 'dimgray'
 
+FS = 16
 ### for white background...
 plt.rc('text',usetex=True)
 plt.rc('font',**{'family':'sans-serif','sans-serif':['Avant Garde']}) 
@@ -48,30 +49,40 @@ def plot_sample(ax, onehot_val, shash_incs, shash_cpd, bnn_cpd, sample=130):
     plt.plot(shash_incs,
              shash_cpd[sample,:],
              color=clr_shash,
-             linewidth=2,
+             linewidth=4,
              label='SHASH',
             )
 
     # results for BNN
-    plt.hist(bnn_cpd[sample,:],
-             bins=bins,
-             histtype=u'step',
-             density=True, 
-             color=clr_bnn,
-             linewidth=2,
-             label='BNN',
-            )
+    if bnn_cpd is not None:
+        plt.hist(bnn_cpd[sample,:],
+                 bins=bins,
+                 histtype=u'step',
+                 density=True, 
+                 color=clr_bnn,
+                 linewidth=2,
+                 label='BNN',
+                )
 
     # truth
     plt.axvline(x=onehot_val[sample,0],color=clr_truth,linestyle='--')
-
+    plt.text(x=onehot_val[sample,0]+1, 
+             y = .09, 
+             s = 'truth', 
+             color=clr_truth,
+             fontsize=12,
+             horizontalalignment='left',
+            )
     plt.legend()
+    
+    plt.ylim(0,0.1)
+    plt.xlim(-45,45)
 
     ax = plt.gca()
     xticks = ax.get_xticks()
-    yticks = np.around(ax.get_yticks(),3)
-    plt.xticks(xticks.astype(int),xticks.astype(int))
-    plt.yticks(yticks,yticks)
+    yticks = np.around(ax.get_yticks(),2)
+    ax.set_xticks(xticks.astype(int),xticks.astype(int))
+    ax.set_yticks(yticks,yticks)
 
     plt.title('validation sample ' + str(sample))
     plt.xlabel('predicted deviation from consensus (knots)')
@@ -84,23 +95,37 @@ def plot_pits(ax, x_val, onehot_val, model_shash, shash_cpd, bnn_cpd):
     plt.sca(ax)      
     
     # shash pit
-    bins, hist_shash, D_shash, EDp_shash = model_diagnostics.compute_pit('shash',onehot_val, x_val=x_val,model_shash=model_shash)
+    bins, hist_shash, D_shash, EDp_shash = model_diagnostics.compute_pit('shash',onehot_val, x_data=x_val,model_shash=model_shash)
     bins_inc = bins[1]-bins[0]
-    plt.bar(hist_shash[1][:-1]+bins_inc/6+bins_inc/6,
+
+    if bnn_cpd is not None:
+        bin_add = bins_inc/6+bins_inc/6 
+        bin_width = bins_inc/3
+    else:
+        bin_add = bins_inc/2
+        bin_width = bins_inc*.75
+    plt.bar(hist_shash[1][:-1] + bin_add,
              hist_shash[0],
-             width=bins_inc/3,
+             width=bin_width,
              color=clr_shash,
              label='SHASH',
             )
     
     # bnn pit    
-    bins, hist_bnn, D_bnn, EDp_bnn = model_diagnostics.compute_pit('bnn',onehot_val, bnn_cpd)
-    plt.bar(hist_bnn[1][:-1]+3*bins_inc/6+bins_inc/6,
-             hist_bnn[0],
-             width=bins_inc/3,
-             color=clr_bnn,
-             label='BNN',
-            )
+    if bnn_cpd is not None:
+        bins, hist_bnn, D_bnn, EDp_bnn = model_diagnostics.compute_pit('bnn',onehot_val, bnn_cpd)
+        plt.bar(hist_bnn[1][:-1]+3*bins_inc/6+bins_inc/6,
+                 hist_bnn[0],
+                 width=bins_inc/3,
+                 color=clr_bnn,
+                 label='BNN',
+                )
+        plt.text(0.,np.max(yticks)*.94,
+                 'BNN ~~~~D: ' + str(np.round(D_bnn,4)) + ' (' + str(np.round(EDp_bnn,3)) +  ')', 
+                 color=clr_bnn,
+                 verticalalignment='top',             
+                 fontsize=12)
+        
 
     # make the figure pretty
     plt.axhline(y=.1, 
@@ -108,9 +133,10 @@ def plot_pits(ax, x_val, onehot_val, model_shash, shash_cpd, bnn_cpd):
                 color='dimgray', 
                 linewidth=1.,
                )
+    plt.ylim(0,.2)
     plt.xticks(bins,np.around(bins,1))
     ax = plt.gca()
-    yticks = np.around(ax.get_yticks(),2)
+    yticks = np.around(np.arange(0,.25,.05),2)
     plt.yticks(yticks,yticks)
     
     plt.text(0.,np.max(yticks)*.99,
@@ -118,17 +144,12 @@ def plot_pits(ax, x_val, onehot_val, model_shash, shash_cpd, bnn_cpd):
              color=clr_shash,     
              verticalalignment='top',
              fontsize=12)
-    plt.text(0.,np.max(yticks)*.94,
-             'BNN ~~~~D: ' + str(np.round(D_bnn,4)) + ' (' + str(np.round(EDp_bnn,3)) +  ')', 
-             color=clr_bnn,
-             verticalalignment='top',             
-             fontsize=12)
 
 
     plt.xlabel('probability integral transform')
     plt.ylabel('probability')
     plt.legend(loc=1)
-    plt.title('PIT histogram comparison')
+    plt.title('PIT histogram comparison', fontsize=FS, color='k')
     
 def plot_medians(ax, onehot_val, shash_cpd, bnn_cpd, shash_med):
     plt.sca(ax)

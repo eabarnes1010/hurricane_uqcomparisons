@@ -209,9 +209,13 @@ def build_hurricane_data(data_path, settings, verbose=0):
             raise Warning("Are you sure you want n_val < 100?")
             
     elif settings["val_condition"] == "years":
-        unique_years = df['year'].unique()
-        years = unique_years[:settings["n_val"]]
-        index = df.index[df['year'].isin(years)] 
+        if verbose != 0:
+            print('years' + str(settings["n_val"]) + ' withheld for testing')
+        index = df.index[df['year'].isin(settings["n_val"])]   
+        
+        # unique_years = df['year'].unique()
+        # years = unique_years[:settings["n_val"]]
+        # index = df.index[df['year'].isin(years)] 
         
     df_val = df.iloc[index]
     x_val = df_val[x_names].to_numpy()
@@ -285,7 +289,12 @@ def build_hurricane_data(data_path, settings, verbose=0):
     # change dtype of onehot
     onehot_train = onehot_train.astype('float32')
     onehot_val = onehot_val.astype('float32')    
-    onehot_test = onehot_test.astype('float32')        
+    onehot_test = onehot_test.astype('float32')
+    
+    # create valtest set
+    x_valtest = np.concatenate((x_val, x_test), axis=0)
+    onehot_valtest = np.concatenate((onehot_val, onehot_test), axis=0)
+    df_valtest = df_val.append(df_test)
 
     return (
         data_summary,        
@@ -295,7 +304,10 @@ def build_hurricane_data(data_path, settings, verbose=0):
         onehot_val,
         x_test,
         onehot_test,        
+        x_valtest,
+        onehot_valtest,
         df_train,
         df_val,
         df_test,
+        df_valtest,
     )
