@@ -6,9 +6,12 @@ import model_diagnostics
 # import imp
 # imp.reload(model_diagnostics)
 
-clr_shash = 'teal'
-clr_bnn   = 'orange'
+colors = ('#284E60','#E1A730','#D95980','#C3B1E1','#351F27','#A9C961')
+clr_shash = colors[0]
+clr_bnn   = colors[3]
 clr_truth = 'dimgray'
+
+
 
 FS = 16
 ### for white background...
@@ -20,7 +23,6 @@ plt.rc('axes',labelcolor='dimgrey')
 plt.rc('axes',labelcolor='dimgrey')
 plt.rc('xtick',color='dimgrey')
 plt.rc('ytick',color='dimgrey')
-
 
 def adjust_spines(ax, spines):
     for loc, spine in ax.spines.items():
