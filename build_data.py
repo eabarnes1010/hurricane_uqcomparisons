@@ -16,7 +16,7 @@ import toolbox
 
 
 __author__ = "Elizabeth A. Barnes and Randal J Barnes"
-__version__ = "17 December 2021"
+__version__ = "18 March 2022"
 
 
 def build_hurricane_data(data_path, settings, verbose=0):
@@ -82,7 +82,7 @@ def build_hurricane_data(data_path, settings, verbose=0):
     # Setup for the selected target.
     if settings["target"] == "intensity":
         x_names = [
-            "NCI",
+            "NCI","VMAX0",
             "DSDV", "LGDV", "HWDV", "AVDV",
             "VMXC", "DV12", "SLAT", "SSTN", "SHDC", "DTL",
         ]

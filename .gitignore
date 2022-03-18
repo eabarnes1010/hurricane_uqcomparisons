@@ -13,6 +13,7 @@ checkpoints/
 figures/
 saved_models/
 saved_metrics/
+saved_predictions/
 model_metrics/
 documents/
 archive/

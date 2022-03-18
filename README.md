@@ -6,8 +6,15 @@ Neural networks are used to estimate consensus hurricane track and intensity err
 ***
 This code was written in python 3.9.7, tensorflow 2.7.0, tensorflow-probability 0.15.0 and numpy 1.21.4. 
 
-## Example use case
+## Order of Operations
 ***
+* Step 1: ```_train_model_randomseeds.ipynb```
+* Step 2: ```_compute_metrics.ipynb```
+* Step 3: ```_plot_metrics.ipynb```
+* Step 4: ```_compute_shashPredictions.ipynb```
+* Step 5: ```_plot_singleModel.ipynb```
+* Step 6: ```_plot_uqMetrics.ipynb```
+* Step 7: ```_plot_uqCurves.ipynb```
 
 ## General Notes
 ***
