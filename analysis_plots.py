@@ -105,7 +105,7 @@ def plot_pits(ax, x_val, onehot_val, model_shash, shash_cpd, bnn_cpd):
         bin_width = bins_inc/3
     else:
         bin_add = bins_inc/2
-        bin_width = bins_inc*.75
+        bin_width = bins_inc*.98
     plt.bar(hist_shash[1][:-1] + bin_add,
              hist_shash[0],
              width=bin_width,
@@ -133,7 +133,7 @@ def plot_pits(ax, x_val, onehot_val, model_shash, shash_cpd, bnn_cpd):
     plt.axhline(y=.1, 
                 linestyle='--',
                 color='dimgray', 
-                linewidth=1.,
+                linewidth=2.,
                )
     plt.ylim(0,.2)
     plt.xticks(bins,np.around(bins,1))

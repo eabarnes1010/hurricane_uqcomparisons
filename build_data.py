@@ -190,7 +190,7 @@ def build_hurricane_data(data_path, settings, verbose=0):
             plt.xlabel('predictor')
             plt.show() 
     else:
-        years = settings["test_condition"]
+        years = settings["years_test"]
         if verbose != 0:
             print('years' + str(years) + ' withheld for testing')
         index = df.index[df['year'].isin(years)]   

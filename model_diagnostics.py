@@ -3,9 +3,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import shash
+from scipy import signal    
 
 __author__ = "Randal J Barnes and Elizabeth A. Barnes"
-__version__ = "17 December 2021"
+__version__ = "17 March 2022"
 
 
 def plot_history(history, model_name):
@@ -287,3 +288,28 @@ def compute_iqr_error_corr(uncertainty_type, onehot_data, bnn_cpd=None, pred_med
         iqr_error_pearson = [np.nan,np.nan]
 
     return iqr_error_spearman, iqr_error_pearson
+
+
+def compute_pr_ri(x,y,ri_threshold):
+    assert len(x)==len(y)
+    ithreshold = np.argmin(np.abs(x - ri_threshold))
+    pr_ri = (np.sum(y[ithreshold:])*(x[1]-x[0]))
+    
+    return pr_ri
+
+
+def compute_clim_errors(onehot, smooth=False):
+    bfilter = [1,2,1]
+    OBS_DEV_BINS = np.arange(-200,200,1)
+    obs_dev_cons = onehot - 0.0
+    
+    h = np.histogram(obs_dev_cons, bins=OBS_DEV_BINS)
+    h_x = h[1]
+    obs_dev_cons_hist = h[0]/(obs_dev_cons.shape[0]*(OBS_DEV_BINS[1]-OBS_DEV_BINS[0]))
+    
+    if(smooth==True):
+        for iloop in range(10):
+            obs_dev_cons_hist = signal.filtfilt(b=bfilter,a=np.sum(bfilter),x=obs_dev_cons_hist)
+        
+    return obs_dev_cons_hist, h_x[1:]
+    
