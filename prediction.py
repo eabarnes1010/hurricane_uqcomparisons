@@ -34,11 +34,11 @@ def params(x_inputs, model):
     sigma_pred = y_pred[:, 1]
 
     gamma_pred = np.zeros(np.shape(y_pred[:, 0]),dtype='float32')
-    if np.shape(y_pred)[1] == 3:
+    if np.shape(y_pred)[1] >= 3:
         gamma_pred = y_pred[:, 2]
 
     tau_pred = np.ones(np.shape(y_pred[:, 0]),dtype='float32')
-    if np.shape(y_pred)[1] == 4:
+    if np.shape(y_pred)[1] >=4 :
         tau_pred = y_pred[:, 3]
 
     return mu_pred, sigma_pred, gamma_pred, tau_pred
