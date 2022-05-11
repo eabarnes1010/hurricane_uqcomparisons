@@ -12,7 +12,7 @@ import tensorflow as tf
 from tensorflow.keras import regularizers
 from tensorflow import keras
 import tensorflow_probability as tfp
-from distributions import normal_softplus, shash_dist
+from distributions import normal_softplus, shash_dist, normal_dist
 from custom_loss import compute_shash_NLL, compute_NLL
 from custom_metrics import CustomMAE, InterquartileCapture, SignTest
 from tensorflow.keras import optimizers
@@ -477,7 +477,7 @@ def build_bnn_model(
     )(log_sigma_unit)
     
     params_layer = tf.keras.layers.concatenate([mu_unit, sigma_unit], axis=1)
-    dist = tfp.layers.DistributionLambda(normal_softplus)(params_layer)
+    dist = tfp.layers.DistributionLambda(normal_dist)(params_layer)
     model = tf.keras.models.Model(inputs=inputs, outputs=dist)    
     
     # model_params = tf.keras.models.Model(inputs=inputs, outputs=params) # to be used later to study the params if you want to
