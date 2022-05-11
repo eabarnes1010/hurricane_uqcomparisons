@@ -265,7 +265,7 @@ def get_settings(experiment_name):
         },       
         
         #------------------------------------------------------------
-        "intensity312_EPCP48": {
+        "intensity412_EPCP48": {
             "filename": "nnfit_vlist_17-Mar-2022_eab.dat",
             "uncertainty_type": 'bnn',  #'reg', 'shash3', 'bnn', 'mcdrop'  
             "leadtime": 48,
@@ -289,8 +289,9 @@ def get_settings(experiment_name):
             "val_condition": "random",
             "n_val": 200,
             "n_train": "max",
-        },        
-        "intensity322_EPCP48": {
+        },            
+       
+        "intensity422_EPCP48": {
             "filename": "nnfit_vlist_17-Mar-2022_eab.dat",
             "uncertainty_type": 'mcdrop',  #'reg', 'shash3', 'bnn', 'mcdrop'  
             "leadtime": 48,
@@ -314,9 +315,33 @@ def get_settings(experiment_name):
             "val_condition": "random",
             "n_val": 200,
             "n_train": "max",
+        },            
+        
+        "intensity315_EPCP48": {
+            "filename": "nnfit_vlist_17-Mar-2022_eab.dat",
+            "uncertainty_type": 'bnnshash3',  #'reg', 'shash3', 'bnn', 'mcdrop'  
+            "leadtime": 48,
+            "basin": "EP|CP",
+            "target": "intensity",
+            "undersample": False,
+            "hiddens": [15, 10],
+            "dropout_rate": [0.,0.,0.],
+            "ridge_param": [0.0,0.0],            
+            "learning_rate": 0.0001,
+            "momentum": 0.9,
+            "nesterov": True,
+            "batch_size": 64,
+            "rng_seed_list": [222, 333, 416, 599, 739],
+            "rng_seed": None,
+            "act_fun": "relu",
+            "n_epochs": 25_000,
+            "patience": 250,
+            "test_condition": "years",
+            "years_test": (2020,),
+            "val_condition": "random",
+            "n_val": 200,
+            "n_train": "max",
         },        
-        
-        
     
     }
 

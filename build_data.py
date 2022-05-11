@@ -246,11 +246,11 @@ def build_hurricane_data(data_path, settings, verbose=0):
     # of distribution parameters.
     if settings["uncertainty_type"] in ("bnn","mcdrop","reg"):
         n_parameters = 1        
-    elif settings["uncertainty_type"] == "shash2":
+    elif "shash2" in settings["uncertainty_type"]:
         n_parameters = 2
-    elif settings["uncertainty_type"] == "shash3":
+    elif "shash3" in settings["uncertainty_type"]:
         n_parameters = 3
-    elif settings["uncertainty_type"] == "shash4":
+    elif "shash4" in settings["uncertainty_type"]:
         n_parameters = 4
     else:
         raise NotImplementedError
