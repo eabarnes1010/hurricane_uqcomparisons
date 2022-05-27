@@ -13,7 +13,7 @@ from tensorflow.keras import regularizers
 from tensorflow import keras
 import tensorflow_probability as tfp
 from distributions import normal_softplus, shash_dist, normal_dist
-from custom_loss import compute_shash_NLL, compute_NLL
+from custom_loss import compute_shash_NLL, compute_NLL, compute_bnnshash_NLL
 from custom_metrics import CustomMAE, InterquartileCapture, SignTest
 from tensorflow.keras import optimizers
 
@@ -62,7 +62,7 @@ def make_model(settings, x_train, onehot_train, model_compile=False):
                 optimizer=optimizers.Adam(
                     learning_rate=settings["learning_rate"],
                 ),
-                loss=compute_NLL,
+                loss=compute_bnnshash_NLL,
             )   
             
     elif settings["uncertainty_type"] in ("mcdrop", "reg"):  
@@ -101,11 +101,6 @@ def make_model(settings, x_train, onehot_train, model_compile=False):
                 optimizer=optimizers.Adam(
                     learning_rate=settings["learning_rate"],
                 ),
-                # optimizer=optimizers.SGD(
-                #     learning_rate=settings["learning_rate"],
-                #     momentum=settings["momentum"],
-                #     nesterov=settings["nesterov"],
-                # ),
                 loss=compute_shash_NLL,
                 metrics=[
                     CustomMAE(name="custom_mae"),
@@ -419,16 +414,6 @@ def build_bnn_model(
             bias_divergence_fn=bias_divergence_fn,
             seed=rng_seed+ilayer+1,
         )(x)
-
-    # penultimate layer (mu, sigma)
-    # params = tfp.layers.DenseFlipout(
-    #          units=2,
-    #          bias_posterior_fn=tfp.layers.util.default_mean_field_normal_fn(),
-    #          bias_prior_fn=tfp.layers.default_multivariate_normal_fn,
-    #          kernel_divergence_fn=kernel_divergence_fn,
-    #          bias_divergence_fn=bias_divergence_fn,
-    #          seed=rng_seed+100,
-    # )(x)
     
     # Compute the mean and standard deviation of the y_train data to rescale
     # the mu and sigma parameters.
@@ -488,7 +473,7 @@ def build_bnnshash_model(
     x_train, onehot_train, hiddens, output_shape, act_fun="relu", rng_seed=999, 
 ):
     """Build the fully-connected BNN architecture with
-    internal scaling and a final shash distribution at the output.
+    internal scaling.
 
     Arguments
     ---------
@@ -609,9 +594,11 @@ def build_bnnshash_model(
         name="sigma_unit",
     )(log_sigma_unit)
     
+    # Add gamma and tau units if requested.
     if output_shape == 2:
-        gamma_unit = tf.zeros_like(mu_unit)
-        tau_unit = tf.ones_like(mu_unit)
+        gamma_unit = tf.zeros_like(mu_z_unit)
+        tau_unit = tf.ones_like(mu_z_unit)
+
     else:
         # gamma_unit. The network predicts the gamma directly.
         gamma_unit = tfp.layers.DenseFlipout(
@@ -622,10 +609,13 @@ def build_bnnshash_model(
             bias_divergence_fn=bias_divergence_fn,
             seed=rng_seed+100,
             name="gamma_unit",
-        )(x)      
+        )(x)   
         if output_shape == 3:
-            tau_unit = tf.ones_like(mu_unit)
+            tau_unit = tf.ones_like(mu_z_unit)
+
         else:
+            # tau_unit. The network predicts the log of the tau, then
+            # the custom Exponentiate layer converts it to tau.
             log_tau_unit = tfp.layers.DenseFlipout(
                 units=1,
                 bias_posterior_fn=tfp.layers.util.default_mean_field_normal_fn(),
@@ -634,17 +624,16 @@ def build_bnnshash_model(
                 bias_divergence_fn=bias_divergence_fn,
                 seed=rng_seed+100,
                 name="log_tau_unit",
-            )(x)
+            )(x)            
 
             tau_unit = Exponentiate(
                 name="tau_unit",
             )(log_tau_unit)
+
         
     params_layer = tf.keras.layers.concatenate([mu_unit, sigma_unit, gamma_unit, tau_unit], axis=1)
     dist = tfp.layers.DistributionLambda(shash_dist)(params_layer)
     model = tf.keras.models.Model(inputs=inputs, outputs=dist)    
-    
-    # model_params = tf.keras.models.Model(inputs=inputs, outputs=params) # to be used later to study the params if you want to
     
     return model
 

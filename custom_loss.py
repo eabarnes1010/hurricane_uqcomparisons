@@ -3,6 +3,7 @@
 
 Functions
 ---------
+compute_bnnshash_NLL(y,distr)
 compute_NLL(y,distr)
 compute_shash_NLL(y_true, pred)
 
@@ -11,10 +12,16 @@ import tensorflow as tf
 import shash
 
 __author__ = "Randal J Barnes and Elizabeth A. Barnes"
-__version__ = "14 December 2021"
+__version__ = "27 May 2022"
+
+
+def compute_bnnshash_NLL(y, distr): 
+    return -2.*distr.log_prob(y)  #900: 5, 901:2
+
 
 def compute_NLL(y, distr): 
     return -distr.log_prob(y) 
+
 
 def compute_shash_NLL(y_true, pred):
     """Negative log-likelihood loss using the sinh-arcsinh normal distribution.

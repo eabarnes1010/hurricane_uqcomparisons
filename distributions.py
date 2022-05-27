@@ -13,5 +13,5 @@ def normal_softplus(params):
 
 def shash_dist(params):
     return tfp.distributions.SinhArcsinh(params[:,0:1],params[:,1:2],params[:,2:3],params[:,3:4])
-    # return shash.prob(params[:,0:1],params[:,1:2],params[:,2:3],params[:,3:4])
+
     
