@@ -19,8 +19,7 @@ Usage
 
 """
 import tensorflow as tf
-
-import shash
+import shash_tfp
 
 __author__ = "Randal J Barnes and Elizabeth A. Barnes"
 __version__ = "30 October 2021"
@@ -57,8 +56,9 @@ class CustomMAE(tf.keras.metrics.Metric):
         else:
             tau = tf.ones_like(mu)
 
-        predictions = shash.median(mu, sigma, gamma, tau)
-        # predictions = shash.mean(mu, sigma, gamma, tau)
+        dist = shash_tfp.Shash(mu, sigma, gamma, tau)
+        predictions = dist.median()
+        # predictions = dist.mean()
 
         error = tf.math.abs(y_true[:, 0] - predictions)
         batch_error = tf.reduce_sum(error)
@@ -98,8 +98,9 @@ class InterquartileCapture(tf.keras.metrics.Metric):
         else:
             tau = tf.ones_like(mu)
 
-        lower = shash.quantile(0.25, mu, sigma, gamma, tau)
-        upper = shash.quantile(0.75, mu, sigma, gamma, tau)
+        dist = shash_tfp.Shash(mu, sigma, gamma, tau)
+        lower = dist.quantile(0.25)
+        upper = dist.quantile(0.75)
 
         batch_count = tf.reduce_sum(
             tf.cast(
@@ -147,7 +148,8 @@ class SignTest(tf.keras.metrics.Metric):
         else:
             tau = tf.ones_like(mu)
 
-        median = shash.median(mu, sigma, gamma, tau)
+        dist = shash_tfp.Shash(mu, sigma, gamma, tau)
+        median = dist.median()
 
         batch_count = tf.reduce_sum(
             tf.cast(tf.math.greater(y_true[:, 0], median), tf.float32)

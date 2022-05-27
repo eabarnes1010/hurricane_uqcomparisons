@@ -1,9 +1,15 @@
 """Build the fully-connected network architecture.
 
+Classes
+---------
+Exponentiate(keras.layers.Layer)
+
 Functions
 ---------
+make_model(settings, x_train, onehot_train, model_compile)
 build_shash_model(hiddens, input_shape, output_shape, ridge_penalty, act_fun, rng_seed)
 build_bnn_model(hiddens, input_shape, output_shape, ridge_penalty, act_fun, rng_seed)
+build_bnnshash_model(hiddens, input_shape, output_shape, ridge_penalty, act_fun, rng_seed)
 
 """
 import numpy as np
@@ -12,8 +18,8 @@ import tensorflow as tf
 from tensorflow.keras import regularizers
 from tensorflow import keras
 import tensorflow_probability as tfp
-from distributions import normal_softplus, shash_dist, normal_dist
-from custom_loss import compute_shash_NLL, compute_NLL, compute_bnnshash_NLL
+from distributions import shash2_dist, shash3_dist, shash4_dist, normal_dist
+from custom_loss import compute_shash_NLL, compute_NLL
 from custom_metrics import CustomMAE, InterquartileCapture, SignTest
 from tensorflow.keras import optimizers
 
@@ -48,12 +54,12 @@ def make_model(settings, x_train, onehot_train, model_compile=False):
                 ),
                 loss=compute_NLL,
             )   
-    elif "bnnshash" in settings["uncertainty_type"]:       
+    elif "bnnshash" in settings["uncertainty_type"]: 
         model = build_bnnshash_model(
             x_train,
             onehot_train,
             hiddens=settings["hiddens"],
-            output_shape=onehot_train.shape[1],
+            output_shape=settings["n_shash_params"],
             act_fun=settings["act_fun"],
             rng_seed=settings["rng_seed"],                    
         )        
@@ -62,7 +68,7 @@ def make_model(settings, x_train, onehot_train, model_compile=False):
                 optimizer=optimizers.Adam(
                     learning_rate=settings["learning_rate"],
                 ),
-                loss=compute_bnnshash_NLL,
+                loss=compute_NLL,
             )   
             
     elif settings["uncertainty_type"] in ("mcdrop", "reg"):  
@@ -336,6 +342,7 @@ def build_shash_model(
     model = tf.keras.models.Model(inputs=inputs, outputs=output_layer)
     return model
 
+
 def build_bnn_model(
     x_train, onehot_train, hiddens, output_shape, act_fun="relu", rng_seed=999, 
 ):
@@ -465,9 +472,9 @@ def build_bnn_model(
     dist = tfp.layers.DistributionLambda(normal_dist)(params_layer)
     model = tf.keras.models.Model(inputs=inputs, outputs=dist)    
     
-    # model_params = tf.keras.models.Model(inputs=inputs, outputs=params) # to be used later to study the params if you want to
-    
     return model
+
+
 
 def build_bnnshash_model(
     x_train, onehot_train, hiddens, output_shape, act_fun="relu", rng_seed=999, 
@@ -596,9 +603,9 @@ def build_bnnshash_model(
     
     # Add gamma and tau units if requested.
     if output_shape == 2:
-        gamma_unit = tf.zeros_like(mu_z_unit)
-        tau_unit = tf.ones_like(mu_z_unit)
-
+        params_layer = tf.keras.layers.concatenate([mu_unit, sigma_unit], axis=1)  
+        dist = tfp.layers.DistributionLambda(shash2_dist)(params_layer)
+        
     else:
         # gamma_unit. The network predicts the gamma directly.
         gamma_unit = tfp.layers.DenseFlipout(
@@ -609,10 +616,12 @@ def build_bnnshash_model(
             bias_divergence_fn=bias_divergence_fn,
             seed=rng_seed+100,
             name="gamma_unit",
-        )(x)   
-        if output_shape == 3:
-            tau_unit = tf.ones_like(mu_z_unit)
+        )(x) 
 
+        if output_shape == 3:
+            params_layer = tf.keras.layers.concatenate([mu_unit, sigma_unit, gamma_unit], axis=1)
+            dist = tfp.layers.DistributionLambda(shash3_dist)(params_layer)
+            
         else:
             # tau_unit. The network predicts the log of the tau, then
             # the custom Exponentiate layer converts it to tau.
@@ -629,13 +638,15 @@ def build_bnnshash_model(
             tau_unit = Exponentiate(
                 name="tau_unit",
             )(log_tau_unit)
-
+            
+            params_layer = tf.keras.layers.concatenate([mu_unit, sigma_unit, gamma_unit, tau_unit], axis=1)
+            dist = tfp.layers.DistributionLambda(shash4_dist)(params_layer)
         
-    params_layer = tf.keras.layers.concatenate([mu_unit, sigma_unit, gamma_unit, tau_unit], axis=1)
-    dist = tfp.layers.DistributionLambda(shash_dist)(params_layer)
     model = tf.keras.models.Model(inputs=inputs, outputs=dist)    
     
     return model
+
+
 
 
 def build_mcdrop_model(

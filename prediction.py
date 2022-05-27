@@ -7,10 +7,10 @@ percentile_value
 
 """
 import numpy as np
-import shash
+import shash_tfp
 
 __author__ = "Elizabeth Barnes and Randal J Barnes"
-__version__ = "30 October 2021"
+__version__ = "27 May 2022"
 
 
 def params(x_inputs, model):
@@ -46,6 +46,7 @@ def params(x_inputs, model):
 
 def percentile_value(mu_pred, sigma_pred, gamma_pred, tau_pred, percentile_frac=0.5):
     """Function to obtain percentile value of the shash distribution."""
-    return shash.quantile(
-        pr=percentile_frac, mu=mu_pred, sigma=sigma_pred, gamma=gamma_pred, tau=tau_pred
-    ).numpy()
+    
+    dist = shash_tfp.Shash(mu=mu_pred, sigma=sigma_pred, gamma=gamma_pred, tau=tau_pred)
+    
+    return dist.quantile(percentile_frac).numpy()

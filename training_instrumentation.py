@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from IPython.display import clear_output
-import shash
+import shash_tfp
 
 __author__ = "Randal J Barnes and Elizabeth A. Barnes"
 __version__ = "30 October 2021"
@@ -133,7 +133,9 @@ class TrainingInstrumentation(tf.keras.callbacks.Callback):
                 else:
                     tau = tf.ones_like(mu)
 
-                F = shash.cdf(self.onehot_data[:, 0], mu, sigma, gamma, tau)
+                dist = shash_tfp.Shash(mu, sigma, gamma, tau)
+                F = dist.cdf(self.onehot_data[:, 0])
+                
                 plt.subplot(3, 2, 2)
                 plt.hist(
                     F.numpy(),

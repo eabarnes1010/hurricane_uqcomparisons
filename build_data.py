@@ -245,7 +245,9 @@ def build_hurricane_data(data_path, settings, verbose=0):
     # are required by tensorflow; the number of columns must equal the number
     # of distribution parameters.
     if settings["uncertainty_type"] in ("bnn","mcdrop","reg"):
-        n_parameters = 1        
+        n_parameters = 1
+    elif "bnnshash" in settings["uncertainty_type"]:
+        n_parameters = 1    
     elif "shash2" in settings["uncertainty_type"]:
         n_parameters = 2
     elif "shash3" in settings["uncertainty_type"]:
@@ -254,6 +256,7 @@ def build_hurricane_data(data_path, settings, verbose=0):
         n_parameters = 4
     else:
         raise NotImplementedError
+    
            
     onehot_train = np.zeros((len(y_train), n_parameters))
     onehot_val = np.zeros((len(y_val), n_parameters))

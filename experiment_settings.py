@@ -6,16 +6,42 @@ val_condition   : "random", "years"
 """
 
 __author__ = "Elizabeth A. Barnes and Randal J. Barnes"
-__date__   = "18 March 2022"
+__date__   = "27 May 2022"
 
 
 def get_settings(experiment_name):
-    experiments = {     
+    experiments = {   
+        
+        #=======================NEW SHASH_TFP CODE===========================================        
+        
+        "intensity702_EPCP48": {
+            "filename": "nnfit_vlist_17-Mar-2022_eab.dat",
+            "uncertainty_type": 'shash3',  #'reg', 'shash3', 'bnn', 'mcdrop'  
+            "leadtime": 48,
+            "basin": "EP|CP",
+            "target": "intensity",
+            "undersample": False,
+            "hiddens": [15, 10],
+            "dropout_rate": [0.,0.,0.],
+            "ridge_param": [0.0,0.0],            
+            "learning_rate": 0.0001,
+            "momentum": 0.9,
+            "nesterov": True,
+            "batch_size": 64,
+            "rng_seed_list": [222, 333, 416, 599, 739],
+            "rng_seed": None,
+            "act_fun": "relu",
+            "n_epochs": 25_000,
+            "patience": 250,
+            "test_condition": "leave-one-out",
+            "years_test": None,
+            "val_condition": "random",
+            "n_val": 200,
+            "n_train": "max",
+        },        
         
         
-        
-        
-        #=======================New SHASH Code===============================================
+        #=======================Old SHASH Code===============================================
         
         "intensity201_AL24": {
             "filename": "nnfit_vlist_17-Mar-2022_eab.dat",
@@ -320,11 +346,12 @@ def get_settings(experiment_name):
             "val_condition": "random",
             "n_val": 200,
             "n_train": "max",
-        },    
-        #------------------------------------------------------------
-        "intensity900_EPCP48": {
+        },  
+        
+        "intensity432_EPCP48": {
             "filename": "nnfit_vlist_17-Mar-2022_eab.dat",
-            "uncertainty_type": 'bnnshash2',  #'reg', 'shash3', 'bnn', 'mcdrop'  
+            "uncertainty_type": 'bnnshash',  
+            "n_shash_params" : 3,                        
             "leadtime": 48,
             "basin": "EP|CP",
             "target": "intensity",
@@ -340,19 +367,19 @@ def get_settings(experiment_name):
             "rng_seed": None,
             "act_fun": "relu",
             "n_epochs": 25_000,
-            "patience": 1_500,
+            "patience": 250,
             "test_condition": "years",
             "years_test": (2020,),
             "val_condition": "random",
             "n_val": 200,
             "n_train": "max",
-        }, 
-        
-        "intensity901_EPCP48": {
+        },  
+        "intensity433_AL48": {
             "filename": "nnfit_vlist_17-Mar-2022_eab.dat",
-            "uncertainty_type": 'bnnshash2',  #'reg', 'shash3', 'bnn', 'mcdrop'  
+            "uncertainty_type": 'bnnshash',  
+            "n_shash_params" : 3,                        
             "leadtime": 48,
-            "basin": "EP|CP",
+            "basin": "AL",
             "target": "intensity",
             "undersample": False,
             "hiddens": [15, 10],
@@ -366,7 +393,7 @@ def get_settings(experiment_name):
             "rng_seed": None,
             "act_fun": "relu",
             "n_epochs": 25_000,
-            "patience": 1_500,
+            "patience": 250,
             "test_condition": "years",
             "years_test": (2020,),
             "val_condition": "random",

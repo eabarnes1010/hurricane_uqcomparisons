@@ -5,19 +5,13 @@ Functions
 ---------
 compute_bnnshash_NLL(y,distr)
 compute_NLL(y,distr)
-compute_shash_NLL(y_true, pred)
 
 """
 import tensorflow as tf
-import shash
+import shash_tfp
 
 __author__ = "Randal J Barnes and Elizabeth A. Barnes"
 __version__ = "27 May 2022"
-
-
-def compute_bnnshash_NLL(y, distr): 
-    return -2.*distr.log_prob(y)  #900: 5, 901:2
-
 
 def compute_NLL(y, distr): 
     return -distr.log_prob(y) 
@@ -71,5 +65,6 @@ def compute_shash_NLL(y_true, pred):
     else:
         tau = tf.ones_like(mu)
 
-    loss = -shash.log_prob(y_true[:, 0], mu, sigma, gamma, tau)
+    dist = shash_tfp.Shash(mu, sigma, gamma, tau)
+    loss = -dist.log_prob(y_true[:, 0])
     return tf.reduce_mean(loss, axis=-1)

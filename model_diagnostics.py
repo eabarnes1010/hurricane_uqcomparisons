@@ -2,11 +2,12 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-import shash
-from scipy import signal    
+import shash_tfp
+from scipy import signal 
+import prediction
 
 __author__ = "Randal J Barnes and Elizabeth A. Barnes"
-__version__ = "17 March 2022"
+__version__ = "27 May 2022"
 
 
 def plot_history(history, model_name):
@@ -162,14 +163,16 @@ def plot_history(history, model_name):
 def compute_iqr(uncertainty_type, onehot_data, bnn_cpd=None, x_data=None, model_shash = None):
  
     if(uncertainty_type in ("shash","shash2","shash3","shash4")):
-        shash_pred = model_shash.predict(x_data)
-        mu = shash_pred[:,0]
-        sigma = shash_pred[:,1]
-        gamma = shash_pred[:,2]
-        tau = np.ones(np.shape(mu))
+        mu, sigma, gamma, tau = prediction.params(x_data, model_shash)
+        # shash_pred = model_shash.predict(x_data)        
+        # mu = shash_pred[:,0]
+        # sigma = shash_pred[:,1]
+        # gamma = shash_pred[:,2]
+        # tau = shash_pred[:,3]
 
-        lower = shash.quantile(0.25, mu, sigma, gamma, tau)
-        upper = shash.quantile(0.75, mu, sigma, gamma, tau)
+        dist = shash_tfp.Shash(mu, sigma, gamma, tau)
+        lower = dist.quantile(0.25)
+        upper = dist.quantile(0.75)
     else:
         lower = np.percentile(bnn_cpd,25,axis=1)
         upper = np.percentile(bnn_cpd,75,axis=1)              
@@ -197,12 +200,16 @@ def compute_pit(uncertainty_type, onehot_data, bnn_cpd=None, x_data=None, model_
     bins_inc = bins[1]-bins[0]
 
     if(uncertainty_type in ("shash","shash2","shash3","shash4")):
-        shash_pred = model_shash.predict(x_data)
-        mu = shash_pred[:,0]
-        sigma = shash_pred[:,1]
-        gamma = shash_pred[:,2]
-        tau = np.ones(np.shape(mu))
-        F = shash.cdf(onehot_data[:,0], mu, sigma, gamma, tau)
+        mu, sigma, gamma, tau = prediction.params(x_data, model_shash)
+        # shash_pred = model_shash.predict(x_data)        
+        # mu = shash_pred[:,0]
+        # sigma = shash_pred[:,1]
+        # gamma = shash_pred[:,2]
+        # tau = shash_pred[:,3]
+        
+        dist = shash_tfp.Shash(mu, sigma, gamma, tau)
+        F = dist.cdf(onehot_data[:,0])
+        
         pit_hist = np.histogram(F,
                                   bins,
                                   weights=np.ones_like(F)/float(len(F)),
@@ -229,13 +236,16 @@ def compute_pit(uncertainty_type, onehot_data, bnn_cpd=None, x_data=None, model_
 def compute_nll(uncertainty_type, onehot_data, bnn_cpd=None, model_shash=None, x_data=None):
 
     if(uncertainty_type in ("shash","shash2","shash3","shash4")):
-        # shash NLL 
-        shash_pred = model_shash.predict(x_data)
-        mu = shash_pred[:,0]
-        sigma = shash_pred[:,1]
-        gamma = shash_pred[:,2]
-        tau = np.ones(np.shape(mu))
-        nloglike = -shash.log_prob(onehot_data[:,0], mu, sigma, gamma, tau)        
+        mu, sigma, gamma, tau = prediction.params(x_data, model_shash)
+        # shash_pred = model_shash.predict(x_data)        
+        # mu = shash_pred[:,0]
+        # sigma = shash_pred[:,1]
+        # gamma = shash_pred[:,2]
+        # tau = shash_pred[:,3]
+        
+        dist = shash_tfp.Shash(mu, sigma, gamma, tau)
+        nloglike = -shash_tfpdist.log_prob(onehot_data[:,0])    
+        
     else:
         # bnn NLL
         bins_inc = 2.5
