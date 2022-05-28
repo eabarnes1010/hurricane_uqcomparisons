@@ -2,24 +2,24 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 import logging
-logging.getLogger().setLevel(logging.ERROR)
+# logging.getLogger().setLevel(logging.ERROR)
 
 __author__ = "Randal J. Barnes and Elizabeth A. Barnes"
-__date__ = "27 May 2022"
+__date__ = "28 May 2022"
 
 
 class Shash(tfp.distributions.SinhArcsinh):
     """The sinh-arcsinh-normal distribution using TensorFlow Probability.
 
     Shash is a wrapper subclass of the tfp.distributions.SinhArcsinh class.
-    This wrapper fixes the engendering distribution to be Normal, and adds
+    This wrapper sets the engendering distribution to be Normal, and adds
     methods for various distributional statistics that are not currently
     implemented in TensorFlow.
 
     Attributes
     ----------
         None (beyond those of the baseclass)
-
+        
     Public Methods
     --------------
     mean()
@@ -39,6 +39,17 @@ class Shash(tfp.distributions.SinhArcsinh):
 
     Notes
     -----
+    * There is no __init__ method defined for this subclass: the baseclass
+    __init__ is used. There are four basic defining arguments.
+
+        loc	        floating point Tensor.
+        scale	    Tensor of same dtype and shape as loc.
+        skewness	Tensor of same dtype and shape as loc, or None.
+        tailweight	Tensor of same dtype and shape as loc, or None.
+
+    If skewness is None, it defaults to 0.0 (i.e. shash2).
+    If tailweight is None, it defaults to 1.0 (i.e. shash3).
+    
     * The sinh-arcsinh normal distribution was defined in [1]. A more
     accessible presentation is given in [2].
 
@@ -56,7 +67,7 @@ class Shash(tfp.distributions.SinhArcsinh):
         epsilon             skewness
         delta               1/tailweight
 
-    * The mean, skewness, stddev, and variance defined by Shash MAY NOT
+    * The mean, skew, stddev, and variance defined by Shash MAY NOT
     be used in the loss function because the computations require the
     the Bessel Function of the sencod kind.  The TensorFlow implementation,
     tfp.math.bessel_kve, gives the following warning.
@@ -76,24 +87,6 @@ class Shash(tfp.distributions.SinhArcsinh):
     probability/api_docs/python/tfp/distributions/SinhArcsinh.
 
     """
-
-    def __init__(self, loc, scale, skewness=None, tailweight=None):
-        """
-
-        Arguments
-        ---------
-        loc	        floating point Tensor.
-        scale	    Tensor of same dtype and shape as loc.
-        skewness	Tensor of same dtype and shape as loc, or None.
-        tailweight	Tensor of same dtype and shape as loc, or None.
-
-        Notes
-        -----
-        * If skewness is None, it defaults to 0.0 (i.e. shash2).
-        * If tailweight is None, it defaults to 1.0 (i.e. shash3).
-
-        """
-        super(__class__, self).__init__(loc, scale, skewness, tailweight, name="Shash")
 
     @staticmethod
     def _jones_pewsey_P(q):
