@@ -54,7 +54,7 @@ def make_model(settings, x_train, onehot_train, model_compile=False):
                 ),
                 loss=compute_NLL,
             )   
-    elif "bnnshash" in settings["uncertainty_type"]: 
+    elif settings["uncertainty_type"]=="bnnshash": 
         model = build_bnnshash_model(
             x_train,
             onehot_train,
@@ -62,6 +62,25 @@ def make_model(settings, x_train, onehot_train, model_compile=False):
             output_shape=settings["n_shash_params"],
             act_fun=settings["act_fun"],
             rng_seed=settings["rng_seed"],                    
+        )        
+        if model_compile == True:
+            model.compile(
+                optimizer=optimizers.Adam(
+                    learning_rate=settings["learning_rate"],
+                ),
+                loss=compute_NLL,
+            )   
+
+    elif settings["uncertainty_type"]=="bnnshashLL": 
+        model = build_bnnshashLL_model(
+            x_train,
+            onehot_train,
+            hiddens=settings["hiddens"],
+            output_shape=settings["n_shash_params"],
+            act_fun=settings["act_fun"],
+            ridge_penalty=settings["ridge_param"],
+            rng_seed=settings["rng_seed"], 
+            dropout_rate=settings["dropout_rate"],
         )        
         if model_compile == True:
             model.compile(
@@ -646,6 +665,201 @@ def build_bnnshash_model(
     
     return model
 
+def build_bnnshashLL_model(
+    x_train, onehot_train, hiddens, output_shape, act_fun="relu", ridge_penalty=[0.0,], rng_seed=999, dropout_rate=[0.0,],
+):
+    """Build the fully-connected BNN architecture with
+    internal scaling.
+
+    Arguments
+    ---------
+    x_train : numpy.ndarray
+        The training split of the x data.
+        shape = [n_train, n_features].
+
+    onehot_train : numpy.ndarray
+        The training split of the scaled y data is in the first column.
+        shape = [n_train,].
+
+    hiddens : list (integers)
+        Numeric list containing the number of neurons for each layer.
+
+    output_shape : integer 
+        The prediction.
+
+    ridge_penalty : float, default=0.0
+        The L2 regularization penalty for the first layer.
+        ***NOT USED FOR THE BNN***
+
+    act_fun : function, default="relu"
+        The activation function to use on the deep hidden layers.
+    
+    rng_seed : integer, default=999
+        Random seed for layer initialization
+    
+
+    Returns
+    -------
+    model : tensorflow.keras.models.Model
+
+    Notes
+    -----
+
+    """
+    
+    # The avg and std for feature normalization are computed from x_train.
+    # Using the .adapt method, these are set once and do not change, but
+    # the constants travel with the model.
+    inputs = tf.keras.Input(shape=x_train.shape[1:])
+
+    normalizer = tf.keras.layers.Normalization()
+    normalizer.adapt(x_train)
+    x = normalizer(inputs)
+
+    # define kl divergence functions for BNN
+    # the two lines below rescale the kl divergence ("kind of a bug fix for TFP" - Duerr 2020)
+    kernel_divergence_fn=lambda q, p, _: tfp.distributions.kl_divergence(q, p) / (x_train.shape[0] * 1.0)
+    bias_divergence_fn=lambda q, p, _: tfp.distributions.kl_divergence(q, p) / (x_train.shape[0] * 1.0)
+    
+    x = tf.keras.layers.Dropout(
+        rate=dropout_rate[0],
+        seed=rng_seed,            
+    )(x)   
+    
+    # linear network only
+    if hiddens[0] == 0:
+        x = tf.keras.layers.Dense(
+            units=1,
+            activation="linear",
+            use_bias=True,
+            kernel_regularizer=regularizers.l1_l2(l1=0.00, l2=ridge_penalty[0]),
+            bias_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed+0),
+            kernel_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed+0),
+        )(x)
+    else:
+        # Initialize the first hidden layer.
+        x = tf.keras.layers.Dense(
+            units=hiddens[0],
+            activation=act_fun,
+            use_bias=True,
+            kernel_regularizer=regularizers.l1_l2(l1=0.00, l2=ridge_penalty[0]),
+            bias_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed+0),
+            kernel_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed+0),
+        )(x)
+
+        # Initialize the subsequent hidden layers.
+        for ilayer, layer_size in enumerate(hiddens[1:]):
+            
+            x = tf.keras.layers.Dropout(
+                rate=dropout_rate[ilayer+1],
+                seed=rng_seed,            
+            )(x)            
+            
+            x = tf.keras.layers.Dense(
+                units=layer_size,
+                activation=act_fun,
+                use_bias=True,
+                kernel_regularizer=regularizers.l1_l2(l1=0.00, l2=ridge_penalty[ilayer+1]),
+                bias_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed+ilayer+1),
+                kernel_initializer=tf.keras.initializers.RandomNormal(seed=rng_seed+ilayer+1),
+            )(x)
+            
+    # final dropout prior to output layer
+    x = tf.keras.layers.Dropout(
+        rate=dropout_rate[-1],
+        seed=rng_seed,            
+    )(x) 
+   
+    # Compute the mean and standard deviation of the y_train data to rescale
+    # the mu and sigma parameters.
+    y_avg = np.mean(onehot_train[:, 0])
+    y_std = np.std(onehot_train[:, 0])
+    
+    # mu_unit.  The network predicts the scaled mu_z, then the resclaing
+    # layer scales it up to mu_y.
+    mu_z_unit = tfp.layers.DenseFlipout(
+        units=1,
+        bias_posterior_fn=tfp.layers.util.default_mean_field_normal_fn(),
+        bias_prior_fn=tfp.layers.default_multivariate_normal_fn,
+        kernel_divergence_fn=kernel_divergence_fn,
+        bias_divergence_fn=bias_divergence_fn,
+        seed=rng_seed+100,
+        name="mu_z_unit",
+    )(x)
+
+    mu_unit = tf.keras.layers.Rescaling(
+        scale=y_std,
+        offset=y_avg,
+        name="mu_unit",
+    )(mu_z_unit)
+    
+    # sigma_unit. The network predicts the log of the scaled sigma_z, then
+    # the resclaing layer scales it up to log of sigma y, and the custom
+    # Exponentiate layer converts it to sigma_y.
+    log_sigma_z_unit = tfp.layers.DenseFlipout(
+        units=1,
+        bias_posterior_fn=tfp.layers.util.default_mean_field_normal_fn(),
+        bias_prior_fn=tfp.layers.default_multivariate_normal_fn,
+        kernel_divergence_fn=kernel_divergence_fn,
+        bias_divergence_fn=bias_divergence_fn,
+        seed=rng_seed+100,
+        name="log_sigma_z_unit",
+    )(x)
+
+    log_sigma_unit = tf.keras.layers.Rescaling(
+        scale=1.0,
+        offset=np.log(y_std),
+        name="log_sigma_unit",
+    )(log_sigma_z_unit)
+
+    sigma_unit = Exponentiate(
+        name="sigma_unit",
+    )(log_sigma_unit)
+    
+    # Add gamma and tau units if requested.
+    if output_shape == 2:
+        params_layer = tf.keras.layers.concatenate([mu_unit, sigma_unit], axis=1)  
+        dist = tfp.layers.DistributionLambda(shash2_dist)(params_layer)
+        
+    else:
+        # gamma_unit. The network predicts the gamma directly.
+        gamma_unit = tfp.layers.DenseFlipout(
+            units=1,
+            bias_posterior_fn=tfp.layers.util.default_mean_field_normal_fn(),
+            bias_prior_fn=tfp.layers.default_multivariate_normal_fn,
+            kernel_divergence_fn=kernel_divergence_fn,
+            bias_divergence_fn=bias_divergence_fn,
+            seed=rng_seed+100,
+            name="gamma_unit",
+        )(x) 
+
+        if output_shape == 3:
+            params_layer = tf.keras.layers.concatenate([mu_unit, sigma_unit, gamma_unit], axis=1)
+            dist = tfp.layers.DistributionLambda(shash3_dist)(params_layer)
+            
+        else:
+            # tau_unit. The network predicts the log of the tau, then
+            # the custom Exponentiate layer converts it to tau.
+            log_tau_unit = tfp.layers.DenseFlipout(
+                units=1,
+                bias_posterior_fn=tfp.layers.util.default_mean_field_normal_fn(),
+                bias_prior_fn=tfp.layers.default_multivariate_normal_fn,
+                kernel_divergence_fn=kernel_divergence_fn,
+                bias_divergence_fn=bias_divergence_fn,
+                seed=rng_seed+100,
+                name="log_tau_unit",
+            )(x)            
+
+            tau_unit = Exponentiate(
+                name="tau_unit",
+            )(log_tau_unit)
+            
+            params_layer = tf.keras.layers.concatenate([mu_unit, sigma_unit, gamma_unit, tau_unit], axis=1)
+            dist = tfp.layers.DistributionLambda(shash4_dist)(params_layer)
+        
+    model = tf.keras.models.Model(inputs=inputs, outputs=dist)    
+    
+    return model
 
 
 
