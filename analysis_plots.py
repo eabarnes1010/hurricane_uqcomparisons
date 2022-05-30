@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import shash
 import model_diagnostics
 
 # import imp
